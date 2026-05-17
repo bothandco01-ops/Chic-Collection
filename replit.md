@@ -38,6 +38,7 @@ A luxury Nigerian womenswear accessories ecommerce site for heels and glasses. D
 - Contract-first API: OpenAPI spec is the source of truth; never edit generated files.
 - Session-based cart: `localStorage` key `cartSessionId` passed as `x-session-id` header. No login required to add to cart.
 - Payment: Nigerian bank transfer only. Bank = First Bank Nigeria, Account = BOTH & CO. LIMITED / 3012345678. Customer uploads screenshot proof (base64), admin confirms manually.
+- Email notifications: nodemailer-based; fires on order status changes (order placed, payment confirmed, shipped, delivered, cancelled). SMTP credentials stored in site_settings (non-sensitive fields) + `SMTP_PASS` env secret. Templates stored in page_content slugs: `notification-order-placed`, `notification-payment-confirmed`, `notification-order-shipped`, `notification-order-delivered`, `notification-order-cancelled`. Receipt template stored at slug `receipt-template`.
 - Admin access: `user?.publicMetadata?.role === 'admin'` via Clerk's `useUser()`.
 - Price display: Nigerian Naira — `₦{price.toLocaleString()}`.
 
@@ -58,6 +59,7 @@ A luxury Nigerian womenswear accessories ecommerce site for heels and glasses. D
 - **Admin Dashboard** (`/admin`) — Stats overview + recent orders table
 - **Admin Orders** (`/admin/orders`) — Full order management with status updates + payment proof viewer
 - **Admin Products** (`/admin/products`) — Create/edit/delete products
+- **Admin Templates** (`/admin/templates`) — Edit receipt/invoice text (tagline, address, footer) + edit email notification templates for each order status event
 
 ## User preferences
 

@@ -31,4 +31,9 @@ export interface SiteSettingsUpdate {
   buttonRadius?: string;
   buttonStyle?: string;
   adminEmails?: string;
+  smtpEnabled?: boolean;
+  smtpHost?: string;
+  smtpPort?: string;
+  smtpUser?: string;
+  smtpFrom?: string;
 }

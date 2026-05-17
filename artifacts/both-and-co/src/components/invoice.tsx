@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { Order } from "@workspace/api-client-react";
-import { X, Printer, Download } from "lucide-react";
+import { Order, useGetPageContent, getGetPageContentQueryKey } from "@workspace/api-client-react";
+import { X, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function formatInvoiceNumber(id: number, createdAt: string): string {
@@ -8,7 +8,26 @@ function formatInvoiceNumber(id: number, createdAt: string): string {
   return `BC-${year}-${id.toString().padStart(5, "0")}`;
 }
 
-function InvoiceDocument({ order }: { order: Order }) {
+interface ReceiptTemplate {
+  tagline: string;
+  address: string;
+  footerMessage: string;
+  footerSubtext: string;
+}
+
+const RECEIPT_DEFAULTS: ReceiptTemplate = {
+  tagline: "Luxury Nigerian Womenswear Accessories",
+  address: "Lagos, Nigeria",
+  footerMessage: "Thank you for shopping with BOTH & CO.",
+  footerSubtext: "For enquiries, please contact us via WhatsApp.",
+};
+
+function parseReceiptTemplate(body: string | undefined): ReceiptTemplate {
+  if (!body) return RECEIPT_DEFAULTS;
+  try { return { ...RECEIPT_DEFAULTS, ...JSON.parse(body) }; } catch { return RECEIPT_DEFAULTS; }
+}
+
+function InvoiceDocument({ order, template }: { order: Order; template: ReceiptTemplate }) {
   const subtotal = (order.items || []).reduce((s, i) => s + i.price * i.quantity, 0);
   const deliveryFee = order.deliveryFee ?? 0;
   const total = subtotal + deliveryFee;
@@ -29,8 +48,8 @@ function InvoiceDocument({ order }: { order: Order }) {
       <div className="flex justify-between items-start mb-10 pb-8 border-b-2 border-gray-200">
         <div>
           <div className="font-serif italic font-bold text-3xl text-gray-900 tracking-wider mb-1">BOTH &amp; CO.</div>
-          <p className="text-gray-500 text-sm">Luxury Nigerian Womenswear Accessories</p>
-          <p className="text-gray-500 text-sm">Lagos, Nigeria</p>
+          <p className="text-gray-500 text-sm">{template.tagline}</p>
+          <p className="text-gray-500 text-sm">{template.address}</p>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-gray-800 uppercase tracking-widest mb-2">Invoice</div>
@@ -124,8 +143,8 @@ function InvoiceDocument({ order }: { order: Order }) {
 
       {/* Footer */}
       <div className="border-t border-gray-200 pt-6 text-center text-xs text-gray-400">
-        <p className="font-serif italic text-base text-gray-600 mb-1">Thank you for shopping with BOTH &amp; CO.</p>
-        <p>For enquiries, please contact us via WhatsApp. Invoice #{invoiceNumber}</p>
+        <p className="font-serif italic text-base text-gray-600 mb-1">{template.footerMessage}</p>
+        <p>{template.footerSubtext} Invoice #{invoiceNumber}</p>
       </div>
     </div>
   );
@@ -138,6 +157,15 @@ interface InvoiceModalProps {
 
 export function InvoiceModal({ order, onClose }: InvoiceModalProps) {
   const printArea = useRef<HTMLDivElement>(null);
+
+  const { data: templateData } = useGetPageContent("receipt-template", {
+    query: {
+      queryKey: getGetPageContentQueryKey("receipt-template"),
+      retry: false,
+      staleTime: 5 * 60 * 1000,
+    },
+  });
+  const template = parseReceiptTemplate(templateData?.body);
 
   const handlePrint = () => {
     const el = printArea.current;
@@ -179,7 +207,7 @@ export function InvoiceModal({ order, onClose }: InvoiceModalProps) {
         </div>
 
         <div ref={printArea} className="w-full max-w-3xl shadow-2xl mt-10">
-          <InvoiceDocument order={order} />
+          <InvoiceDocument order={order} template={template} />
         </div>
       </div>
     </div>

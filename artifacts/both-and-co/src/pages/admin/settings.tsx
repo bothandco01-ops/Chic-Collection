@@ -23,7 +23,7 @@ import { DEFAULT_SECTIONS, SETTINGS_DEFAULTS } from "@/lib/settings";
 import {
   Save, Banknote, MessageCircle, Image as ImageIcon, ShieldCheck,
   Palette, Type, MousePointerClick, Layout as LayoutIcon, Star,
-  Plus, Trash2, GripVertical, ArrowUp, ArrowDown, Upload,
+  Plus, Trash2, GripVertical, ArrowUp, ArrowDown, Upload, Mail,
 } from "lucide-react";
 
 const COLOR_PRESETS = [
@@ -37,7 +37,7 @@ const COLOR_PRESETS = [
 
 const FONT_SUGGESTIONS = ["Playfair Display", "Cormorant Garamond", "Lora", "Cardo", "DM Serif Display", "Inter", "Poppins", "Montserrat", "Work Sans", "Manrope", "Open Sans", "Roboto"];
 
-type Tab = "branding" | "homepage" | "featured" | "buttons" | "bank" | "contact" | "access";
+type Tab = "branding" | "homepage" | "featured" | "buttons" | "bank" | "contact" | "access" | "email";
 
 const TABS: { id: Tab; label: string; icon: typeof Banknote }[] = [
   { id: "branding", label: "Brand", icon: Palette },
@@ -47,6 +47,7 @@ const TABS: { id: Tab; label: string; icon: typeof Banknote }[] = [
   { id: "bank", label: "Bank", icon: Banknote },
   { id: "contact", label: "Contact", icon: MessageCircle },
   { id: "access", label: "Access", icon: ShieldCheck },
+  { id: "email", label: "Email", icon: Mail },
 ];
 
 export default function AdminSettings() {
@@ -143,6 +144,7 @@ export default function AdminSettings() {
             {activeTab === "bank" && <BankTab values={values} set={set} />}
             {activeTab === "contact" && <ContactTab values={values} set={set} />}
             {activeTab === "access" && <AccessTab values={values} set={set} />}
+            {activeTab === "email" && <EmailTab values={values} set={set} />}
           </div>
         )}
 
@@ -663,5 +665,52 @@ function AccessTab({ values, set }: { values: SiteSettings; set: <K extends keyo
         <Textarea value={values.adminEmails} onChange={(e) => set("adminEmails", e.target.value)} rows={3} className="rounded-none border-border bg-background resize-none" />
       </Field>
     </Section>
+  );
+}
+
+function EmailTab({ values, set }: { values: SiteSettings; set: <K extends keyof SiteSettings>(k: K, v: SiteSettings[K]) => void }) {
+  return (
+    <div className="space-y-8">
+      <Section title="Email Notifications" description="Configure SMTP credentials so BOTH & CO. can automatically send order status emails to customers. Edit the email templates themselves under Admin → Templates → Notifications.">
+        <Field label="Enable Email Sending">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              role="checkbox"
+              aria-checked={!!values.smtpEnabled}
+              onClick={() => set("smtpEnabled", !values.smtpEnabled)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none ${values.smtpEnabled ? "bg-primary" : "bg-muted"}`}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform ${values.smtpEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </div>
+            <span className="text-sm text-foreground">{values.smtpEnabled ? "Enabled — emails will be sent on order status changes" : "Disabled — no emails will be sent"}</span>
+          </label>
+        </Field>
+
+        <Field label="SMTP Host" hint="Your email provider's outgoing mail server. e.g. smtp.gmail.com or mail.yourdomain.com">
+          <Input value={values.smtpHost ?? ""} onChange={(e) => set("smtpHost", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="smtp.gmail.com" />
+        </Field>
+
+        <Field label="SMTP Port" hint="Usually 587 (TLS/STARTTLS) or 465 (SSL). Use 587 if unsure.">
+          <Input value={values.smtpPort ?? "587"} onChange={(e) => set("smtpPort", e.target.value)} className="rounded-none border-border bg-background font-mono w-40" placeholder="587" />
+        </Field>
+
+        <Field label="SMTP Username" hint="Usually your full email address.">
+          <Input value={values.smtpUser ?? ""} onChange={(e) => set("smtpUser", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="orders@yourdomain.com" />
+        </Field>
+
+        <Field label="From Address" hint="The name and address customers see as the sender. e.g. BOTH &amp; CO. &lt;orders@yourdomain.com&gt;">
+          <Input value={values.smtpFrom ?? ""} onChange={(e) => set("smtpFrom", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="BOTH & CO. <orders@yourdomain.com>" />
+        </Field>
+
+        <div className="bg-muted/30 border border-border p-4 rounded-none text-sm text-muted-foreground">
+          <p className="font-semibold text-foreground text-xs uppercase tracking-widest mb-2">SMTP Password</p>
+          <p>
+            For security, the SMTP password is stored as a server environment secret named{" "}
+            <code className="bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">SMTP_PASS</code>.
+            Set it in your deployment environment secrets — it is never exposed through the admin panel.
+          </p>
+        </div>
+      </Section>
+    </div>
   );
 }

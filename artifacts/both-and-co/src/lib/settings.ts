@@ -39,6 +39,11 @@ export const SETTINGS_DEFAULTS: SiteSettings = {
   buttonRadius: "0",
   buttonStyle: "solid",
   adminEmails: "",
+  smtpEnabled: false,
+  smtpHost: "",
+  smtpPort: "587",
+  smtpUser: "",
+  smtpFrom: "",
 };
 
 export function useSiteSettings(): SiteSettings {

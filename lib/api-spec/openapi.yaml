@@ -981,6 +981,16 @@ components:
           type: string
         adminEmails:
           type: string
+        smtpEnabled:
+          type: boolean
+        smtpHost:
+          type: string
+        smtpPort:
+          type: string
+        smtpUser:
+          type: string
+        smtpFrom:
+          type: string
 
     SiteSettingsUpdate:
       type: object
@@ -1032,6 +1042,16 @@ components:
         buttonStyle:
           type: string
         adminEmails:
+          type: string
+        smtpEnabled:
+          type: boolean
+        smtpHost:
+          type: string
+        smtpPort:
+          type: string
+        smtpUser:
+          type: string
+        smtpFrom:
           type: string
 
     CartItem:

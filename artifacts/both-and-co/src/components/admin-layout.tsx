@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Package, ShoppingBag, Users, Settings as SettingsIcon, Truck, FileText, Tag } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Users, Settings as SettingsIcon, Truck, FileText, Tag, Mail } from "lucide-react";
 import { Layout } from "@/components/layout";
 
 const TABS = [
@@ -10,6 +10,7 @@ const TABS = [
   { href: "/admin/delivery", label: "Delivery", icon: Truck },
   { href: "/admin/discounts", label: "Discounts", icon: Tag },
   { href: "/admin/content", label: "Content", icon: FileText },
+  { href: "/admin/templates", label: "Templates", icon: Mail },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
 ];

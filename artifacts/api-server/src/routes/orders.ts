@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { eq, sql } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable, cartItemsTable, deliveryZonesTable, couponsTable } from "@workspace/db";
+import { db, ordersTable, orderItemsTable, productsTable, cartItemsTable, deliveryZonesTable, couponsTable, pageContentTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
+import { getOrCreateSettings } from "./site-settings.js";
+import { sendOrderNotification } from "../lib/email.js";
 
 const router = Router();
 
@@ -121,6 +123,33 @@ router.post("/", async (req, res) => {
     }
 
     const enriched = await enrichOrder(order);
+
+    // Fire "order placed" notification email (non-blocking)
+    const customerEmail = guestEmail;
+    if (customerEmail) {
+      void (async () => {
+        try {
+          const [templateRow] = await db.select().from(pageContentTable).where(eq(pageContentTable.slug, "notification-order-placed"));
+          if (!templateRow) return;
+          let tpl: { subject: string; body: string };
+          try { tpl = JSON.parse(templateRow.body); } catch { return; }
+          const settings = await getOrCreateSettings();
+          const invoiceNo = formatInvoiceNumber(order.id, order.createdAt);
+          const itemLines = enriched.items.map((i: { product?: { name?: string } | null; productId: number; quantity: number; price: number }) => `${i.product?.name || `Product #${i.productId}`} x${i.quantity} — ₦${(i.price * i.quantity).toLocaleString()}`).join("\n");
+          await sendOrderNotification(settings, customerEmail, tpl.subject, tpl.body, {
+            name: guestName || "Customer",
+            orderNumber: invoiceNo,
+            total: `₦${order.totalAmount.toLocaleString()}`,
+            items: itemLines,
+            address: shippingAddress || "",
+            status: "pending",
+          });
+        } catch {
+          // Non-critical — do not fail the order creation
+        }
+      })();
+    }
+
     res.status(201).json(enriched);
   } catch (err) {
     req.log.error(err);

@@ -663,7 +663,12 @@ export const GetSiteSettingsResponse = zod.object({
   "sansFont": zod.string(),
   "buttonRadius": zod.string(),
   "buttonStyle": zod.string(),
-  "adminEmails": zod.string().optional()
+  "adminEmails": zod.string().optional(),
+  "smtpEnabled": zod.boolean().optional(),
+  "smtpHost": zod.string().optional(),
+  "smtpPort": zod.string().optional(),
+  "smtpUser": zod.string().optional(),
+  "smtpFrom": zod.string().optional()
 })
 
 
@@ -823,7 +828,12 @@ export const UpdateSiteSettingsBody = zod.object({
   "sansFont": zod.string().optional(),
   "buttonRadius": zod.string().optional(),
   "buttonStyle": zod.string().optional(),
-  "adminEmails": zod.string().optional()
+  "adminEmails": zod.string().optional(),
+  "smtpEnabled": zod.boolean().optional(),
+  "smtpHost": zod.string().optional(),
+  "smtpPort": zod.string().optional(),
+  "smtpUser": zod.string().optional(),
+  "smtpFrom": zod.string().optional()
 })
 
 export const UpdateSiteSettingsResponse = zod.object({
@@ -859,7 +869,12 @@ export const UpdateSiteSettingsResponse = zod.object({
   "sansFont": zod.string(),
   "buttonRadius": zod.string(),
   "buttonStyle": zod.string(),
-  "adminEmails": zod.string().optional()
+  "adminEmails": zod.string().optional(),
+  "smtpEnabled": zod.boolean().optional(),
+  "smtpHost": zod.string().optional(),
+  "smtpPort": zod.string().optional(),
+  "smtpUser": zod.string().optional(),
+  "smtpFrom": zod.string().optional()
 })
 
 

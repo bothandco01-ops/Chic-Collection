@@ -4,6 +4,8 @@ import { db, ordersTable, orderItemsTable, productsTable, siteSettingsTable, del
 import { serialize } from "./products.js";
 import { getOrCreateSettings } from "./site-settings";
 import { getAuth, clerkClient } from "@clerk/express";
+import { sendOrderNotification } from "../lib/email.js";
+import { formatInvoiceNumber } from "./orders.js";
 
 const router = Router();
 
@@ -125,6 +127,41 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
         return { ...item, product: product || null };
       })
     );
+
+    // Fire notification email (non-blocking — never delay the response)
+    const customerEmail = order.guestEmail;
+    if (customerEmail) {
+      void (async () => {
+        try {
+          const slugMap: Record<string, string> = {
+            confirmed: "notification-payment-confirmed",
+            shipped: "notification-order-shipped",
+            delivered: "notification-order-delivered",
+            cancelled: "notification-order-cancelled",
+          };
+          const templateSlug = slugMap[status];
+          if (!templateSlug) return;
+          const [templateRow] = await db.select().from(pageContentTable).where(eq(pageContentTable.slug, templateSlug));
+          if (!templateRow) return;
+          let tpl: { subject: string; body: string };
+          try { tpl = JSON.parse(templateRow.body); } catch { return; }
+          const settings = await getOrCreateSettings();
+          const invoiceNo = formatInvoiceNumber(order.id, order.createdAt);
+          const itemLines = enrichedItems.map((i) => `${i.product?.name || `Product #${i.productId}`} x${i.quantity} — ₦${(i.price * i.quantity).toLocaleString()}`).join("\n");
+          await sendOrderNotification(settings, customerEmail, tpl.subject, tpl.body, {
+            name: order.guestName || "Customer",
+            orderNumber: invoiceNo,
+            total: `₦${order.totalAmount.toLocaleString()}`,
+            items: itemLines,
+            address: order.shippingAddress || "",
+            status,
+          });
+        } catch (e) {
+          req.log.warn(e, "Failed to send notification email");
+        }
+      })();
+    }
+
     res.json({ ...order, items: enrichedItems });
   } catch (err) {
     req.log.error(err);
