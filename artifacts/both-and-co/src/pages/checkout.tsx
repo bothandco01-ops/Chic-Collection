@@ -8,6 +8,7 @@ import {
   getListOrdersQueryKey,
   useListDeliveryZones,
   getListDeliveryZonesQueryKey,
+  useValidateCoupon,
   Order,
 } from "@workspace/api-client-react";
 import { useForm } from "react-hook-form";
@@ -23,7 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getSessionId } from "@/lib/session";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/react";
-import { Copy, CheckCircle, Upload, Printer } from "lucide-react";
+import { Copy, CheckCircle, Upload, Printer, Tag, X } from "lucide-react";
 import { useSiteSettings } from "@/lib/settings";
 import { InvoiceModal } from "@/components/invoice";
 
@@ -63,6 +64,11 @@ export default function Checkout() {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
 
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; type: string; value: number; discountAmount: number } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const validateCoupon = useValidateCoupon();
+
   const { data: cartItems, isLoading } = useGetCart({ query: { queryKey: getGetCartQueryKey() } });
   const { data: deliveryZones } = useListDeliveryZones({ query: { queryKey: getListDeliveryZonesQueryKey(), staleTime: 60_000 } });
 
@@ -70,6 +76,25 @@ export default function Checkout() {
   const submitProof = useSubmitPaymentProof();
 
   const subtotal = cartItems?.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0) || 0;
+
+  const handleApplyCoupon = () => {
+    if (!couponInput.trim()) return;
+    setCouponError("");
+    validateCoupon.mutate(
+      { data: { code: couponInput.trim(), orderAmount: subtotal } },
+      {
+        onSuccess: (result) => {
+          setAppliedCoupon(result);
+          setCouponInput("");
+          setCouponError("");
+        },
+        onError: (err: any) => {
+          const msg = err?.response?.data?.error || err?.message || "Invalid coupon code";
+          setCouponError(msg);
+        },
+      }
+    );
+  };
 
   const form = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
@@ -88,7 +113,8 @@ export default function Checkout() {
     return zone?.price ?? 0;
   }, [selectedState, deliveryZones]);
 
-  const grandTotal = subtotal + deliveryFee;
+  const discountAmount = appliedCoupon?.discountAmount ?? 0;
+  const grandTotal = Math.max(0, subtotal + deliveryFee - discountAmount);
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -126,6 +152,7 @@ export default function Checkout() {
         phone: data.phone,
         notes: data.notes,
         sessionId,
+        couponCode: appliedCoupon?.code,
         items: orderItems,
       },
     }, {
@@ -379,7 +406,54 @@ export default function Checkout() {
                 ))}
               </div>
 
-              <div className="border-t border-border pt-4 space-y-2">
+              {/* Coupon input */}
+              <div className="border-t border-border pt-4 mb-2">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-primary/10 border border-primary/30 px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-mono font-semibold text-primary tracking-wider">{appliedCoupon.code}</span>
+                      <span className="text-xs text-muted-foreground">
+                        — {appliedCoupon.type === "percentage" ? `${appliedCoupon.value}% off` : `₦${appliedCoupon.value.toLocaleString()} off`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => { setAppliedCoupon(null); setCouponError(""); }}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      title="Remove coupon"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-xs tracking-widest uppercase text-muted-foreground block mb-2">Coupon Code</label>
+                    <div className="flex gap-2">
+                      <Input
+                        value={couponInput}
+                        onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(""); }}
+                        onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
+                        placeholder="Enter code"
+                        className="rounded-none border-border bg-background text-sm uppercase flex-1"
+                        data-testid="input-coupon"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleApplyCoupon}
+                        disabled={!couponInput.trim() || validateCoupon.isPending}
+                        className="rounded-none text-xs tracking-widest uppercase whitespace-nowrap"
+                        data-testid="button-apply-coupon"
+                      >
+                        {validateCoupon.isPending ? "..." : "Apply"}
+                      </Button>
+                    </div>
+                    {couponError && <p className="text-xs text-destructive mt-1.5">{couponError}</p>}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 space-y-2">
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Subtotal</span>
                   <span>₦{subtotal.toLocaleString()}</span>
@@ -395,6 +469,12 @@ export default function Checkout() {
                   <div className="flex justify-between text-sm text-muted-foreground italic">
                     <span>Delivery</span>
                     <span>Select state above</span>
+                  </div>
+                )}
+                {appliedCoupon && (
+                  <div className="flex justify-between text-sm text-primary">
+                    <span>Discount ({appliedCoupon.code})</span>
+                    <span>-₦{appliedCoupon.discountAmount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-medium text-lg pt-3 border-t border-border">

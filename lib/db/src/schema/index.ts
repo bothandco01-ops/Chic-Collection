@@ -6,3 +6,4 @@ export * from "./services";
 export * from "./site-settings";
 export * from "./delivery-zones";
 export * from "./page-content";
+export * from "./coupons";

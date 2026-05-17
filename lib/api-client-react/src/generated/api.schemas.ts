@@ -257,7 +257,88 @@ export interface OrderInput {
   phone: string;
   notes?: string;
   sessionId?: string;
+  couponCode?: string;
   items?: OrderInputItemsItem[];
+}
+
+export type CouponType = typeof CouponType[keyof typeof CouponType];
+
+
+export const CouponType = {
+  percentage: 'percentage',
+  fixed: 'fixed',
+} as const;
+
+export interface Coupon {
+  id: number;
+  code: string;
+  type: CouponType;
+  value: number;
+  /** @nullable */
+  minOrderAmount?: number | null;
+  /** @nullable */
+  maxUses?: number | null;
+  usedCount: number;
+  isActive: boolean;
+  /** @nullable */
+  expiresAt?: string | null;
+  createdAt: string;
+}
+
+export type CouponInputType = typeof CouponInputType[keyof typeof CouponInputType];
+
+
+export const CouponInputType = {
+  percentage: 'percentage',
+  fixed: 'fixed',
+} as const;
+
+export interface CouponInput {
+  code: string;
+  type: CouponInputType;
+  value: number;
+  minOrderAmount?: number;
+  maxUses?: number;
+  isActive?: boolean;
+  expiresAt?: string;
+}
+
+export type CouponUpdateType = typeof CouponUpdateType[keyof typeof CouponUpdateType];
+
+
+export const CouponUpdateType = {
+  percentage: 'percentage',
+  fixed: 'fixed',
+} as const;
+
+export interface CouponUpdate {
+  code?: string;
+  type?: CouponUpdateType;
+  value?: number;
+  minOrderAmount?: number;
+  maxUses?: number;
+  isActive?: boolean;
+  expiresAt?: string;
+}
+
+export interface CouponValidateInput {
+  code: string;
+  orderAmount: number;
+}
+
+export type CouponValidateResultType = typeof CouponValidateResultType[keyof typeof CouponValidateResultType];
+
+
+export const CouponValidateResultType = {
+  percentage: 'percentage',
+  fixed: 'fixed',
+} as const;
+
+export interface CouponValidateResult {
+  code: string;
+  type: CouponValidateResultType;
+  value: number;
+  discountAmount: number;
 }
 
 export interface PaymentProofInput {
@@ -340,5 +421,9 @@ featured?: string;
 
 export type ListAdminOrdersParams = {
 status?: string;
+};
+
+export type ValidateCoupon400 = {
+  error?: string;
 };
 

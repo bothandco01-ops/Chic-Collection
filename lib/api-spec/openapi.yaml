@@ -23,6 +23,8 @@ tags:
     description: Site settings
   - name: admin
     description: Admin operations
+  - name: coupons
+    description: Coupon and discount codes
 paths:
   /healthz:
     get:
@@ -694,6 +696,104 @@ paths:
               schema:
                 $ref: "#/components/schemas/SiteSettings"
 
+  /coupons/validate:
+    post:
+      operationId: validateCoupon
+      tags: [coupons]
+      summary: Validate a coupon code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouponValidateInput"
+      responses:
+        "200":
+          description: Coupon is valid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CouponValidateResult"
+        "400":
+          description: Invalid or expired coupon
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  /admin/coupons:
+    get:
+      operationId: listAdminCoupons
+      tags: [admin]
+      summary: List all coupons (admin)
+      responses:
+        "200":
+          description: List of coupons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Coupon"
+    post:
+      operationId: createCoupon
+      tags: [admin]
+      summary: Create a coupon (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouponInput"
+      responses:
+        "201":
+          description: Created coupon
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+
+  /admin/coupons/{id}:
+    patch:
+      operationId: updateCoupon
+      tags: [admin]
+      summary: Update a coupon (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CouponUpdate"
+      responses:
+        "200":
+          description: Updated coupon
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Coupon"
+    delete:
+      operationId: deleteCoupon
+      tags: [admin]
+      summary: Delete a coupon (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -1082,6 +1182,8 @@ components:
           type: string
         sessionId:
           type: string
+        couponCode:
+          type: string
         items:
           type: array
           items:
@@ -1096,6 +1198,94 @@ components:
                 type: number
               size:
                 type: string
+
+    Coupon:
+      type: object
+      required: [id, code, type, value, usedCount, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        code:
+          type: string
+        type:
+          type: string
+          enum: [percentage, fixed]
+        value:
+          type: integer
+        minOrderAmount:
+          type: ["integer", "null"]
+        maxUses:
+          type: ["integer", "null"]
+        usedCount:
+          type: integer
+        isActive:
+          type: boolean
+        expiresAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    CouponInput:
+      type: object
+      required: [code, type, value]
+      properties:
+        code:
+          type: string
+        type:
+          type: string
+          enum: [percentage, fixed]
+        value:
+          type: integer
+        minOrderAmount:
+          type: integer
+        maxUses:
+          type: integer
+        isActive:
+          type: boolean
+        expiresAt:
+          type: string
+
+    CouponUpdate:
+      type: object
+      properties:
+        code:
+          type: string
+        type:
+          type: string
+          enum: [percentage, fixed]
+        value:
+          type: integer
+        minOrderAmount:
+          type: integer
+        maxUses:
+          type: integer
+        isActive:
+          type: boolean
+        expiresAt:
+          type: string
+
+    CouponValidateInput:
+      type: object
+      required: [code, orderAmount]
+      properties:
+        code:
+          type: string
+        orderAmount:
+          type: number
+
+    CouponValidateResult:
+      type: object
+      required: [code, type, value, discountAmount]
+      properties:
+        code:
+          type: string
+        type:
+          type: string
+          enum: [percentage, fixed]
+        value:
+          type: integer
+        discountAmount:
+          type: number
 
     PaymentProofInput:
       type: object

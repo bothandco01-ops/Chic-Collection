@@ -16,5 +16,6 @@ export interface OrderInput {
   phone: string;
   notes?: string;
   sessionId?: string;
+  couponCode?: string;
   items?: OrderInputItemsItem[];
 }

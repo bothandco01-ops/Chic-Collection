@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { eq, count, sum, desc } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable, siteSettingsTable, deliveryZonesTable, pageContentTable, servicesTable } from "@workspace/db";
+import { eq, count, sum, desc, sql } from "drizzle-orm";
+import { db, ordersTable, orderItemsTable, productsTable, siteSettingsTable, deliveryZonesTable, pageContentTable, servicesTable, couponsTable } from "@workspace/db";
 import { serialize } from "./products.js";
 import { getOrCreateSettings } from "./site-settings";
 import { getAuth, clerkClient } from "@clerk/express";
@@ -321,6 +321,76 @@ router.delete("/delivery-zones/:id", requireAuth, async (req, res): Promise<void
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to delete delivery zone" });
+  }
+});
+
+// ---- Coupons ----
+
+router.get("/coupons", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const coupons = await db.select().from(couponsTable).orderBy(desc(couponsTable.createdAt));
+    res.json(coupons);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch coupons" });
+  }
+});
+
+router.post("/coupons", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const { code, type, value, minOrderAmount, maxUses, isActive, expiresAt } = req.body;
+    if (!code || !type || value === undefined) {
+      res.status(400).json({ error: "code, type, and value are required" });
+      return;
+    }
+    const [coupon] = await db.insert(couponsTable).values({
+      code: String(code).toUpperCase().trim(),
+      type,
+      value: Number(value),
+      minOrderAmount: minOrderAmount ? Number(minOrderAmount) : null,
+      maxUses: maxUses ? Number(maxUses) : null,
+      isActive: isActive !== undefined ? Boolean(isActive) : true,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+    }).returning();
+    res.status(201).json(coupon);
+  } catch (err: any) {
+    req.log.error(err);
+    if (err?.code === "23505") {
+      res.status(409).json({ error: "A coupon with that code already exists" });
+      return;
+    }
+    res.status(500).json({ error: "Failed to create coupon" });
+  }
+});
+
+router.patch("/coupons/:id", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const updates: Record<string, unknown> = {};
+    if (req.body.code !== undefined) updates.code = String(req.body.code).toUpperCase().trim();
+    if (req.body.type !== undefined) updates.type = req.body.type;
+    if (req.body.value !== undefined) updates.value = Number(req.body.value);
+    if (req.body.minOrderAmount !== undefined) updates.minOrderAmount = req.body.minOrderAmount ? Number(req.body.minOrderAmount) : null;
+    if (req.body.maxUses !== undefined) updates.maxUses = req.body.maxUses ? Number(req.body.maxUses) : null;
+    if (req.body.isActive !== undefined) updates.isActive = Boolean(req.body.isActive);
+    if (req.body.expiresAt !== undefined) updates.expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : null;
+    const [coupon] = await db.update(couponsTable).set(updates).where(eq(couponsTable.id, id)).returning();
+    if (!coupon) { res.status(404).json({ error: "Coupon not found" }); return; }
+    res.json(coupon);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update coupon" });
+  }
+});
+
+router.delete("/coupons/:id", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(couponsTable).where(eq(couponsTable.id, id));
+    res.status(204).send();
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete coupon" });
   }
 });
 

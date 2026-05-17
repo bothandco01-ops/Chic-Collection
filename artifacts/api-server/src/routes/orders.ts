@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable, cartItemsTable, deliveryZonesTable } from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
+import { db, ordersTable, orderItemsTable, productsTable, cartItemsTable, deliveryZonesTable, couponsTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 
 const router = Router();
@@ -41,7 +41,7 @@ router.get("/", async (req, res): Promise<void> => {
 router.post("/", async (req, res) => {
   try {
     const auth = getAuth(req);
-    const { guestEmail, guestName, totalAmount, shippingAddress, phone, notes, sessionId, items, deliveryState } = req.body;
+    const { guestEmail, guestName, totalAmount, shippingAddress, phone, notes, sessionId, items, deliveryState, couponCode } = req.body;
     const userId = auth?.userId || null;
 
     // Server-side delivery fee lookup
@@ -55,6 +55,40 @@ router.post("/", async (req, res) => {
       if (zone) deliveryFee = zone.price;
     }
 
+    // Server-side coupon validation and discount
+    let discountAmount = 0;
+    let appliedCouponCode: string | null = null;
+    if (couponCode) {
+      const [coupon] = await db
+        .select()
+        .from(couponsTable)
+        .where(eq(couponsTable.code, String(couponCode).toUpperCase().trim()))
+        .limit(1);
+      if (
+        coupon &&
+        coupon.isActive &&
+        (!coupon.expiresAt || new Date(coupon.expiresAt) >= new Date()) &&
+        (coupon.maxUses === null || coupon.usedCount < coupon.maxUses)
+      ) {
+        const subtotal = (items || []).reduce(
+          (sum: number, i: { price: number; quantity: number }) => sum + i.price * i.quantity,
+          0
+        );
+        if (coupon.minOrderAmount === null || subtotal >= coupon.minOrderAmount) {
+          if (coupon.type === "percentage") {
+            discountAmount = Math.floor((subtotal * coupon.value) / 100);
+          } else {
+            discountAmount = Math.min(coupon.value, subtotal);
+          }
+          appliedCouponCode = coupon.code;
+          await db
+            .update(couponsTable)
+            .set({ usedCount: sql`${couponsTable.usedCount} + 1` })
+            .where(eq(couponsTable.id, coupon.id));
+        }
+      }
+    }
+
     const [order] = await db.insert(ordersTable).values({
       userId,
       guestEmail: guestEmail || null,
@@ -65,7 +99,9 @@ router.post("/", async (req, res) => {
       deliveryState: deliveryState || null,
       shippingAddress,
       phone,
-      notes: notes || null,
+      notes: appliedCouponCode
+        ? `${notes ? notes + "\n" : ""}Coupon applied: ${appliedCouponCode} (-₦${discountAmount.toLocaleString()})`
+        : notes || null,
     }).returning();
 
     if (items && items.length > 0) {
