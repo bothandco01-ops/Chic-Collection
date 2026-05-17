@@ -2,11 +2,8 @@ services:
   - type: web
     name: both-and-co
     runtime: node
-    buildCommand: >
-      npm install -g pnpm &&
-      pnpm install --frozen-lockfile &&
-      BASE_PATH=/ NODE_ENV=production pnpm --filter @workspace/both-and-co run build &&
-      pnpm --filter @workspace/api-server run build
+    nodeVersion: 22.x
+    buildCommand: bash render-build.sh
     startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
     envVars:
       - key: NODE_ENV
