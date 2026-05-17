@@ -62,8 +62,10 @@ async function sendEmail(opts: {
   if (resendKey) {
     // Resend path — simple API key, no SMTP setup needed
     const resend = new Resend(resendKey);
-    // Use configured from address, or fall back to Resend's sandbox sender
+    // Use configured from address, or Resend's allowed sandbox sender
+    // (sandbox allows sending to the verified address only — fine for owner alerts)
     const from = opts.settings.smtpFrom || "BOTH & CO. <onboarding@resend.dev>";
+    // Note: in sandbox mode Resend ignores the from and uses onboarding@resend.dev anyway
     await resend.emails.send({
       from,
       to: [opts.to],
@@ -138,8 +140,10 @@ export async function sendAdminOrderAlert(
 ): Promise<void> {
   if (!isEmailEnabled(settings)) return;
 
-  // Send to configured notification email, or fall back to smtp user email
-  const dest = settings.notificationEmail || settings.smtpUser;
+  // On Resend sandbox, can only send to the account owner's email.
+  // Use notificationEmail if set, else smtpUser, else the Resend account email.
+  const resendKey = process.env.RESEND_API_KEY;
+  const dest = settings.notificationEmail || settings.smtpUser || (resendKey ? "bothandco01@gmail.com" : "");
   if (!dest) return;
 
   const subject = `New Order — ${ctx.orderNumber} (${ctx.total})`;
