@@ -50,7 +50,7 @@ export default function ProductDetail() {
     }
 
     // Show toast immediately — don't wait for server
-    toast({ title: "Added to bag", description: product.name });
+    toast({ title: "Added to bag", description: product.name, duration: 2000 });
 
     // Optimistically increment cart count in cache
     const cartKey = getGetCartQueryKey();
