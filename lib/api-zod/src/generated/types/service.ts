@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface HealthStatus {
-  status: string;
+export interface Service {
+  id: number;
+  title: string;
+  description: string;
+  /** @nullable */
+  icon?: string | null;
 }

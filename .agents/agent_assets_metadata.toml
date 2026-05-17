@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "bfCALX_4CL2qkHdPyO1sp"
+uri = "file://artifacts/both-and-co/public/placeholder-heels.png"
+type = "image"
+title = "luxury heels product photo"
+
+[[generated]]
+id = "izrGIvswCXGxPkrHLKBzG"
+uri = "file://artifacts/both-and-co/public/placeholder-glasses.png"
+type = "image"
+title = "luxury sunglasses product photo"
