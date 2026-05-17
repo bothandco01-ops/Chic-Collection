@@ -11,6 +11,7 @@ export interface OrderInput {
   guestEmail?: string;
   guestName?: string;
   totalAmount: number;
+  deliveryState?: string;
   shippingAddress: string;
   phone: string;
   notes?: string;

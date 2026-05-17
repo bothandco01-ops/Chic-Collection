@@ -1,9 +1,14 @@
 import { Router } from "express";
 import { eq } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable, cartItemsTable } from "@workspace/db";
+import { db, ordersTable, orderItemsTable, productsTable, cartItemsTable, deliveryZonesTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 
 const router = Router();
+
+export function formatInvoiceNumber(id: number, createdAt: Date | string): string {
+  const year = new Date(createdAt).getFullYear();
+  return `BC-${year}-${id.toString().padStart(5, "0")}`;
+}
 
 async function enrichOrder(order: typeof ordersTable.$inferSelect) {
   const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, order.id));
@@ -13,7 +18,11 @@ async function enrichOrder(order: typeof ordersTable.$inferSelect) {
       return { ...item, product: product || null };
     })
   );
-  return { ...order, items: enrichedItems };
+  return {
+    ...order,
+    invoiceNumber: formatInvoiceNumber(order.id, order.createdAt),
+    items: enrichedItems,
+  };
 }
 
 router.get("/", async (req, res): Promise<void> => {
@@ -32,8 +41,19 @@ router.get("/", async (req, res): Promise<void> => {
 router.post("/", async (req, res) => {
   try {
     const auth = getAuth(req);
-    const { guestEmail, guestName, totalAmount, shippingAddress, phone, notes, sessionId, items } = req.body;
+    const { guestEmail, guestName, totalAmount, shippingAddress, phone, notes, sessionId, items, deliveryState } = req.body;
     const userId = auth?.userId || null;
+
+    // Server-side delivery fee lookup
+    let deliveryFee = 0;
+    if (deliveryState) {
+      const [zone] = await db
+        .select()
+        .from(deliveryZonesTable)
+        .where(eq(deliveryZonesTable.state, deliveryState))
+        .limit(1);
+      if (zone) deliveryFee = zone.price;
+    }
 
     const [order] = await db.insert(ordersTable).values({
       userId,
@@ -41,6 +61,8 @@ router.post("/", async (req, res) => {
       guestName: guestName || null,
       status: "pending",
       totalAmount,
+      deliveryFee,
+      deliveryState: deliveryState || null,
       shippingAddress,
       phone,
       notes: notes || null,

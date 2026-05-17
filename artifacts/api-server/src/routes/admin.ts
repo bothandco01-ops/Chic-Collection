@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq, count, sum, desc } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable, siteSettingsTable } from "@workspace/db";
+import { db, ordersTable, orderItemsTable, productsTable, siteSettingsTable, deliveryZonesTable } from "@workspace/db";
 import { serialize } from "./products.js";
 import { getOrCreateSettings } from "./site-settings";
 import { getAuth, clerkClient } from "@clerk/express";
@@ -198,6 +198,63 @@ router.patch("/site-settings", requireAuth, async (req, res): Promise<void> => {
     res.status(500).json({ error: "Failed to update settings" });
   }
 });
+
+// ---- Delivery Zones (admin CRUD) ----
+
+router.get("/delivery-zones", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const zones = await db.select().from(deliveryZonesTable).orderBy(deliveryZonesTable.state);
+    res.json(zones);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch delivery zones" });
+  }
+});
+
+router.post("/delivery-zones", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const { state, price, isActive } = req.body;
+    if (!state || price == null) { res.status(400).json({ error: "state and price are required" }); return; }
+    const [zone] = await db.insert(deliveryZonesTable).values({
+      state: String(state).trim(),
+      price: Number(price),
+      isActive: isActive !== false,
+    }).returning();
+    res.status(201).json(zone);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to create delivery zone" });
+  }
+});
+
+router.patch("/delivery-zones/:id", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const updates: Record<string, unknown> = {};
+    if (req.body.state !== undefined) updates.state = String(req.body.state).trim();
+    if (req.body.price !== undefined) updates.price = Number(req.body.price);
+    if (req.body.isActive !== undefined) updates.isActive = Boolean(req.body.isActive);
+    const [zone] = await db.update(deliveryZonesTable).set(updates).where(eq(deliveryZonesTable.id, id)).returning();
+    if (!zone) { res.status(404).json({ error: "Delivery zone not found" }); return; }
+    res.json(zone);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update delivery zone" });
+  }
+});
+
+router.delete("/delivery-zones/:id", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(deliveryZonesTable).where(eq(deliveryZonesTable.id, id));
+    res.status(204).send();
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete delivery zone" });
+  }
+});
+
+// ---- Settings ----
 
 export function serializeSettings(row: any, includeAdminEmails: boolean) {
   const parse = <T>(v: unknown, fallback: T): T => {

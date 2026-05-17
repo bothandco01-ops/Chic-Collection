@@ -208,6 +208,9 @@ export const ListOrdersResponseItem = zod.object({
   "guestName": zod.string().nullish(),
   "status": zod.enum(['pending', 'payment_uploaded', 'confirmed', 'shipped', 'delivered', 'cancelled']),
   "totalAmount": zod.number(),
+  "deliveryFee": zod.number(),
+  "deliveryState": zod.string().nullish(),
+  "invoiceNumber": zod.string().optional(),
   "paymentProofUrl": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
@@ -245,6 +248,7 @@ export const CreateOrderBody = zod.object({
   "guestEmail": zod.string().optional(),
   "guestName": zod.string().optional(),
   "totalAmount": zod.number(),
+  "deliveryState": zod.string().optional(),
   "shippingAddress": zod.string(),
   "phone": zod.string(),
   "notes": zod.string().optional(),
@@ -272,6 +276,9 @@ export const GetOrderResponse = zod.object({
   "guestName": zod.string().nullish(),
   "status": zod.enum(['pending', 'payment_uploaded', 'confirmed', 'shipped', 'delivered', 'cancelled']),
   "totalAmount": zod.number(),
+  "deliveryFee": zod.number(),
+  "deliveryState": zod.string().nullish(),
+  "invoiceNumber": zod.string().optional(),
   "paymentProofUrl": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
@@ -319,6 +326,9 @@ export const SubmitPaymentProofResponse = zod.object({
   "guestName": zod.string().nullish(),
   "status": zod.enum(['pending', 'payment_uploaded', 'confirmed', 'shipped', 'delivered', 'cancelled']),
   "totalAmount": zod.number(),
+  "deliveryFee": zod.number(),
+  "deliveryState": zod.string().nullish(),
+  "invoiceNumber": zod.string().optional(),
   "paymentProofUrl": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
@@ -427,6 +437,9 @@ export const GetAdminStatsResponse = zod.object({
   "guestName": zod.string().nullish(),
   "status": zod.enum(['pending', 'payment_uploaded', 'confirmed', 'shipped', 'delivered', 'cancelled']),
   "totalAmount": zod.number(),
+  "deliveryFee": zod.number(),
+  "deliveryState": zod.string().nullish(),
+  "invoiceNumber": zod.string().optional(),
   "paymentProofUrl": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
@@ -458,6 +471,18 @@ export const GetAdminStatsResponse = zod.object({
 
 
 /**
+ * @summary List active delivery zones and prices
+ */
+export const ListDeliveryZonesResponseItem = zod.object({
+  "id": zod.number(),
+  "state": zod.string(),
+  "price": zod.number(),
+  "isActive": zod.boolean()
+})
+export const ListDeliveryZonesResponse = zod.array(ListDeliveryZonesResponseItem)
+
+
+/**
  * @summary List all orders (admin)
  */
 export const ListAdminOrdersQueryParams = zod.object({
@@ -471,6 +496,9 @@ export const ListAdminOrdersResponseItem = zod.object({
   "guestName": zod.string().nullish(),
   "status": zod.enum(['pending', 'payment_uploaded', 'confirmed', 'shipped', 'delivered', 'cancelled']),
   "totalAmount": zod.number(),
+  "deliveryFee": zod.number(),
+  "deliveryState": zod.string().nullish(),
+  "invoiceNumber": zod.string().optional(),
   "paymentProofUrl": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
@@ -519,6 +547,9 @@ export const UpdateOrderStatusResponse = zod.object({
   "guestName": zod.string().nullish(),
   "status": zod.enum(['pending', 'payment_uploaded', 'confirmed', 'shipped', 'delivered', 'cancelled']),
   "totalAmount": zod.number(),
+  "deliveryFee": zod.number(),
+  "deliveryState": zod.string().nullish(),
+  "invoiceNumber": zod.string().optional(),
   "paymentProofUrl": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
   "phone": zod.string().nullish(),
@@ -618,6 +649,57 @@ export const GetSiteSettingsResponse = zod.object({
   "buttonRadius": zod.string(),
   "buttonStyle": zod.string(),
   "adminEmails": zod.string().optional()
+})
+
+
+/**
+ * @summary List all delivery zones (admin)
+ */
+export const ListAdminDeliveryZonesResponseItem = zod.object({
+  "id": zod.number(),
+  "state": zod.string(),
+  "price": zod.number(),
+  "isActive": zod.boolean()
+})
+export const ListAdminDeliveryZonesResponse = zod.array(ListAdminDeliveryZonesResponseItem)
+
+
+/**
+ * @summary Create a delivery zone (admin)
+ */
+export const CreateDeliveryZoneBody = zod.object({
+  "state": zod.string(),
+  "price": zod.number(),
+  "isActive": zod.boolean().optional()
+})
+
+
+/**
+ * @summary Update a delivery zone (admin)
+ */
+export const UpdateDeliveryZoneParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateDeliveryZoneBody = zod.object({
+  "state": zod.string().optional(),
+  "price": zod.number().optional(),
+  "isActive": zod.boolean().optional()
+})
+
+export const UpdateDeliveryZoneResponse = zod.object({
+  "id": zod.number(),
+  "state": zod.string(),
+  "price": zod.number(),
+  "isActive": zod.boolean()
+})
+
+
+/**
+ * @summary Delete a delivery zone (admin)
+ */
+export const DeleteDeliveryZoneParams = zod.object({
+  "id": zod.coerce.number()
 })
 
 

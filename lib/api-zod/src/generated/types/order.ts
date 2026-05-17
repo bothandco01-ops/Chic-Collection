@@ -18,6 +18,10 @@ export interface Order {
   guestName?: string | null;
   status: OrderStatus;
   totalAmount: number;
+  deliveryFee: number;
+  /** @nullable */
+  deliveryState?: string | null;
+  invoiceNumber?: string;
   /** @nullable */
   paymentProofUrl?: string | null;
   /** @nullable */

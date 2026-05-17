@@ -9,6 +9,8 @@ export const ordersTable = pgTable("orders", {
   guestName: text("guest_name"),
   status: text("status").notNull().default("pending"),
   totalAmount: real("total_amount").notNull(),
+  deliveryFee: real("delivery_fee").notNull().default(0),
+  deliveryState: text("delivery_state"),
   paymentProofUrl: text("payment_proof_url"),
   shippingAddress: text("shipping_address"),
   phone: text("phone"),

@@ -173,6 +173,25 @@ export interface CartItemUpdate {
   quantity: number;
 }
 
+export interface DeliveryZone {
+  id: number;
+  state: string;
+  price: number;
+  isActive: boolean;
+}
+
+export interface DeliveryZoneInput {
+  state: string;
+  price: number;
+  isActive?: boolean;
+}
+
+export interface DeliveryZoneUpdate {
+  state?: string;
+  price?: number;
+  isActive?: boolean;
+}
+
 export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
 
@@ -206,6 +225,10 @@ export interface Order {
   guestName?: string | null;
   status: OrderStatus;
   totalAmount: number;
+  deliveryFee: number;
+  /** @nullable */
+  deliveryState?: string | null;
+  invoiceNumber?: string;
   /** @nullable */
   paymentProofUrl?: string | null;
   /** @nullable */
@@ -229,6 +252,7 @@ export interface OrderInput {
   guestEmail?: string;
   guestName?: string;
   totalAmount: number;
+  deliveryState?: string;
   shippingAddress: string;
   phone: string;
   notes?: string;

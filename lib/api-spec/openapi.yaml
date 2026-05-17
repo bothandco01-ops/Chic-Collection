@@ -386,6 +386,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminStats"
 
+  /delivery-zones:
+    get:
+      operationId: listDeliveryZones
+      tags: [delivery]
+      summary: List active delivery zones and prices
+      responses:
+        '200':
+          description: Active delivery zones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeliveryZone"
+
   /admin/orders:
     get:
       operationId: listAdminOrders
@@ -473,6 +488,76 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SiteSettings"
+
+  /admin/delivery-zones:
+    get:
+      operationId: listAdminDeliveryZones
+      tags: [admin]
+      summary: List all delivery zones (admin)
+      responses:
+        '200':
+          description: All delivery zones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeliveryZone"
+    post:
+      operationId: createDeliveryZone
+      tags: [admin]
+      summary: Create a delivery zone (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliveryZoneInput"
+      responses:
+        '201':
+          description: Created delivery zone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryZone"
+
+  /admin/delivery-zones/{id}:
+    patch:
+      operationId: updateDeliveryZone
+      tags: [admin]
+      summary: Update a delivery zone (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliveryZoneUpdate"
+      responses:
+        '200':
+          description: Updated delivery zone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeliveryZone"
+    delete:
+      operationId: deleteDeliveryZone
+      tags: [admin]
+      summary: Delete a delivery zone (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
 
   /admin/site-settings:
     patch:
@@ -770,9 +855,43 @@ components:
         quantity:
           type: integer
 
+    DeliveryZone:
+      type: object
+      required: [id, state, price, isActive]
+      properties:
+        id:
+          type: integer
+        state:
+          type: string
+        price:
+          type: number
+        isActive:
+          type: boolean
+
+    DeliveryZoneInput:
+      type: object
+      required: [state, price]
+      properties:
+        state:
+          type: string
+        price:
+          type: number
+        isActive:
+          type: boolean
+
+    DeliveryZoneUpdate:
+      type: object
+      properties:
+        state:
+          type: string
+        price:
+          type: number
+        isActive:
+          type: boolean
+
     Order:
       type: object
-      required: [id, status, totalAmount, createdAt]
+      required: [id, status, totalAmount, deliveryFee, createdAt]
       properties:
         id:
           type: integer
@@ -787,6 +906,12 @@ components:
           enum: [pending, payment_uploaded, confirmed, shipped, delivered, cancelled]
         totalAmount:
           type: number
+        deliveryFee:
+          type: number
+        deliveryState:
+          type: ["string", "null"]
+        invoiceNumber:
+          type: string
         paymentProofUrl:
           type: ["string", "null"]
         shippingAddress:
@@ -831,6 +956,8 @@ components:
           type: string
         totalAmount:
           type: number
+        deliveryState:
+          type: string
         shippingAddress:
           type: string
         phone:

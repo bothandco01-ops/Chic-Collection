@@ -7,6 +7,7 @@ import faqRouter from "./faq";
 import servicesRouter from "./services";
 import adminRouter from "./admin";
 import siteSettingsRouter from "./site-settings";
+import deliveryZonesRouter from "./delivery-zones";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use("/faq", faqRouter);
 router.use("/services", servicesRouter);
 router.use("/admin", adminRouter);
 router.use("/site-settings", siteSettingsRouter);
+router.use("/delivery-zones", deliveryZonesRouter);
 
 export default router;

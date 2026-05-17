@@ -1,12 +1,13 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Package, ShoppingBag, Users, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Users, Settings as SettingsIcon, Truck } from "lucide-react";
 import { Layout } from "@/components/layout";
 
 const TABS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/delivery", label: "Delivery", icon: Truck },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
 ];

@@ -5,15 +5,17 @@ import {
   getListAdminOrdersQueryKey,
   useUpdateOrderStatus,
   OrderStatusUpdateStatus,
+  Order,
 } from "@workspace/api-client-react";
 import { AdminShell } from "@/components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/react";
 import { Link, Redirect } from "wouter";
-import { ChevronLeft, Eye, X } from "lucide-react";
+import { ChevronLeft, Eye, X, Printer, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { isUserAdmin } from "@/lib/admin";
+import { InvoiceModal } from "@/components/invoice";
 
 const statusOptions = ["pending", "payment_uploaded", "confirmed", "shipped", "delivered", "cancelled"];
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -27,21 +29,16 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 export default function AdminOrders() {
   const { user, isLoaded } = useUser();
-  const isSignedIn = !!user;
   const isAdmin = isUserAdmin(user);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewingProof, setViewingProof] = useState<string | null>(null);
+  const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
 
   const { data: orders, isLoading } = useListAdminOrders(
     statusFilter !== "all" ? { status: statusFilter } : {},
-    {
-      query: {
-        queryKey: getListAdminOrdersQueryKey(statusFilter !== "all" ? { status: statusFilter } : {}),
-        enabled: isAdmin,
-      },
-    }
+    { query: { queryKey: getListAdminOrdersQueryKey(statusFilter !== "all" ? { status: statusFilter } : {}), enabled: isAdmin } }
   );
 
   const updateStatus = useUpdateOrderStatus();
@@ -54,11 +51,13 @@ export default function AdminOrders() {
           queryClient.invalidateQueries({ queryKey: getListAdminOrdersQueryKey() });
           toast({ title: `Order #${orderId} updated to ${statusConfig[status]?.label}` });
         },
-        onError: () => {
-          toast({ title: "Failed to update order status", variant: "destructive" });
-        },
+        onError: () => toast({ title: "Failed to update order status", variant: "destructive" }),
       }
     );
+  };
+
+  const confirmPayment = (orderId: number) => {
+    handleStatusChange(orderId, "confirmed");
   };
 
   if (!isLoaded) {
@@ -72,7 +71,7 @@ export default function AdminOrders() {
     );
   }
 
-  if (!isSignedIn) return <Redirect to="/sign-in" />;
+  if (!user) return <Redirect to="/sign-in" />;
 
   if (!isAdmin) {
     return (
@@ -87,6 +86,7 @@ export default function AdminOrders() {
 
   return (
     <AdminShell>
+      {/* Payment proof lightbox */}
       {viewingProof && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setViewingProof(null)}>
           <button className="absolute top-6 right-6 text-white hover:text-primary" onClick={() => setViewingProof(null)}>
@@ -96,8 +96,11 @@ export default function AdminOrders() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-16">
-        <div className="flex items-center gap-4 mb-12">
+      {/* Invoice modal */}
+      {invoiceOrder && <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />}
+
+      <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
+        <div className="flex items-center gap-4 mb-10">
           <Link href="/admin">
             <button className="text-muted-foreground hover:text-foreground transition-colors">
               <ChevronLeft className="h-5 w-5" />
@@ -105,43 +108,40 @@ export default function AdminOrders() {
           </Link>
           <div>
             <p className="text-xs tracking-[0.4em] uppercase text-primary mb-1">Admin</p>
-            <h1 className="font-serif italic text-4xl">Orders</h1>
+            <h1 className="font-serif italic text-3xl md:text-4xl">Orders</h1>
           </div>
         </div>
 
+        {/* Status filter */}
         <div className="flex flex-wrap gap-2 mb-8">
           {["all", ...statusOptions].map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-4 py-2 text-xs tracking-widest uppercase transition-colors border ${
+              className={`px-3 md:px-4 py-2 text-xs tracking-widest uppercase transition-colors border ${
                 statusFilter === s
                   ? "bg-primary text-primary-foreground border-primary"
                   : "border-border text-muted-foreground hover:border-primary hover:text-foreground"
               }`}
               data-testid={`filter-${s}`}
             >
-              {s === "all" ? "All Orders" : (statusConfig[s]?.label || s)}
+              {s === "all" ? "All" : (statusConfig[s]?.label || s)}
             </button>
           ))}
         </div>
 
         {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20" />)}
-          </div>
+          <div className="space-y-3">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
         ) : !orders || orders.length === 0 ? (
-          <div className="bg-card border border-border p-16 text-center text-muted-foreground">
-            No orders found.
-          </div>
+          <div className="bg-card border border-border p-16 text-center text-muted-foreground">No orders found.</div>
         ) : (
           <div className="bg-card border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm" data-testid="table-admin-orders">
                 <thead>
                   <tr className="border-b border-border">
-                    {["Order", "Customer", "Items", "Amount", "Date", "Status", "Proof", "Actions"].map((h) => (
-                      <th key={h} className="text-left px-5 py-4 text-xs tracking-widest uppercase text-muted-foreground font-normal whitespace-nowrap">
+                    {["Order", "Customer", "Items", "Subtotal", "Delivery", "Total", "Date", "Status", "Proof", "Actions"].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-xs tracking-widest uppercase text-muted-foreground font-normal whitespace-nowrap">
                         {h}
                       </th>
                     ))}
@@ -150,30 +150,41 @@ export default function AdminOrders() {
                 <tbody>
                   {orders.map((order, idx) => {
                     const status = statusConfig[order.status] || statusConfig.pending;
+                    const subtotal = order.totalAmount - (order.deliveryFee ?? 0);
                     return (
                       <tr
                         key={order.id}
-                        className={`${idx < orders.length - 1 ? "border-b border-border" : ""} hover:bg-muted/20 transition-colors`}
+                        className={`${idx < orders.length - 1 ? "border-b border-border" : ""} hover:bg-muted/10 transition-colors`}
                         data-testid={`admin-order-${order.id}`}
                       >
-                        <td className="px-5 py-4 font-medium">#{order.id}</td>
-                        <td className="px-5 py-4 text-muted-foreground">
-                          <div>{order.guestName || "User"}</div>
-                          <div className="text-xs">{order.guestEmail || ""}</div>
+                        <td className="px-4 py-4 font-medium whitespace-nowrap">
+                          <div>{order.invoiceNumber || `#${order.id}`}</div>
                         </td>
-                        <td className="px-5 py-4 text-muted-foreground">{order.items?.length || 0}</td>
-                        <td className="px-5 py-4 font-medium">₦{order.totalAmount.toLocaleString()}</td>
-                        <td className="px-5 py-4 text-muted-foreground whitespace-nowrap">
+                        <td className="px-4 py-4 text-muted-foreground">
+                          <div className="font-medium text-foreground truncate max-w-[120px]">{order.guestName || "User"}</div>
+                          <div className="text-xs truncate max-w-[120px]">{order.guestEmail || ""}</div>
+                          {order.phone && <div className="text-xs">{order.phone}</div>}
+                        </td>
+                        <td className="px-4 py-4 text-muted-foreground">{order.items?.length || 0}</td>
+                        <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">
+                          ₦{subtotal.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">
+                          {order.deliveryFee ? `₦${order.deliveryFee.toLocaleString()}` : <span className="italic text-xs">—</span>}
+                          {order.deliveryState && <div className="text-xs">{order.deliveryState}</div>}
+                        </td>
+                        <td className="px-4 py-4 font-medium whitespace-nowrap">₦{order.totalAmount.toLocaleString()}</td>
+                        <td className="px-4 py-4 text-muted-foreground whitespace-nowrap">
                           {new Date(order.createdAt).toLocaleDateString("en-NG")}
                         </td>
-                        <td className={`px-5 py-4 text-xs ${status.color}`}>
+                        <td className={`px-4 py-4 text-xs whitespace-nowrap ${status.color}`}>
                           {status.label}
                         </td>
-                        <td className="px-5 py-4">
+                        <td className="px-4 py-4">
                           {order.paymentProofUrl ? (
                             <button
                               onClick={() => setViewingProof(order.paymentProofUrl!)}
-                              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
+                              className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors whitespace-nowrap"
                               data-testid={`button-view-proof-${order.id}`}
                             >
                               <Eye className="h-3 w-3" /> View
@@ -182,17 +193,39 @@ export default function AdminOrders() {
                             <span className="text-xs text-muted-foreground">None</span>
                           )}
                         </td>
-                        <td className="px-5 py-4">
-                          <select
-                            value={order.status}
-                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                            className="bg-card border border-border text-xs px-2 py-1 text-foreground focus:outline-none focus:border-primary"
-                            data-testid={`select-status-${order.id}`}
-                          >
-                            {statusOptions.map((s) => (
-                              <option key={s} value={s}>{statusConfig[s]?.label || s}</option>
-                            ))}
-                          </select>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col gap-1.5 min-w-[140px]">
+                            <select
+                              value={order.status}
+                              onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                              className="bg-card border border-border text-xs px-2 py-1.5 text-foreground focus:outline-none focus:border-primary w-full"
+                              data-testid={`select-status-${order.id}`}
+                            >
+                              {statusOptions.map((s) => (
+                                <option key={s} value={s}>{statusConfig[s]?.label || s}</option>
+                              ))}
+                            </select>
+                            <div className="flex gap-1">
+                              {order.status === "payment_uploaded" && (
+                                <button
+                                  onClick={() => confirmPayment(order.id)}
+                                  className="flex-1 flex items-center justify-center gap-1 text-[10px] tracking-widest uppercase py-1.5 bg-green-800/30 hover:bg-green-700 text-green-400 hover:text-white border border-green-800/50 transition-colors"
+                                  data-testid={`button-confirm-payment-${order.id}`}
+                                  title="Confirm payment"
+                                >
+                                  <CheckCircle className="h-3 w-3" /> Confirm
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setInvoiceOrder(order)}
+                                className="flex-1 flex items-center justify-center gap-1 text-[10px] tracking-widest uppercase py-1.5 bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground border border-border transition-colors"
+                                data-testid={`button-invoice-${order.id}`}
+                                title="View / print invoice"
+                              >
+                                <Printer className="h-3 w-3" /> Invoice
+                              </button>
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     );
