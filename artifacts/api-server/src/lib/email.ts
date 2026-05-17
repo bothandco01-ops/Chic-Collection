@@ -1,3 +1,4 @@
+import { Resend } from "resend";
 import nodemailer from "nodemailer";
 import type { SiteSettings } from "@workspace/db";
 
@@ -10,20 +11,14 @@ export interface NotificationContext {
   status: string;
 }
 
-function applyPlaceholders(template: string, ctx: NotificationContext): string {
-  return template
-    .replace(/\{\{name\}\}/g, ctx.name)
-    .replace(/\{\{order_number\}\}/g, ctx.orderNumber)
-    .replace(/\{\{total\}\}/g, ctx.total)
-    .replace(/\{\{items\}\}/g, ctx.items)
-    .replace(/\{\{address\}\}/g, ctx.address)
-    .replace(/\{\{status\}\}/g, ctx.status);
-}
+// ─── HTML builder ────────────────────────────────────────────────────────────
 
 function buildHtml(body: string, headerExtra?: string): string {
   const lines = body
     .split("\n")
-    .map((line) => `<p style="margin:0 0 10px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">${line || "&nbsp;"}</p>`)
+    .map((line) =>
+      `<p style="margin:0 0 10px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">${line || "&nbsp;"}</p>`
+    )
     .join("");
   return `<!DOCTYPE html>
 <html>
@@ -42,14 +37,71 @@ function buildHtml(body: string, headerExtra?: string): string {
 </html>`;
 }
 
-function createTransporter(settings: SiteSettings, smtpPass: string) {
-  return nodemailer.createTransport({
-    host: settings.smtpHost,
-    port: parseInt(settings.smtpPort || "587", 10),
-    secure: parseInt(settings.smtpPort || "587", 10) === 465,
-    auth: { user: settings.smtpUser, pass: smtpPass },
+function applyPlaceholders(template: string, ctx: NotificationContext): string {
+  return template
+    .replace(/\{\{name\}\}/g, ctx.name)
+    .replace(/\{\{order_number\}\}/g, ctx.orderNumber)
+    .replace(/\{\{total\}\}/g, ctx.total)
+    .replace(/\{\{items\}\}/g, ctx.items)
+    .replace(/\{\{address\}\}/g, ctx.address)
+    .replace(/\{\{status\}\}/g, ctx.status);
+}
+
+// ─── Email dispatcher (Resend first, SMTP fallback) ───────────────────────────
+
+async function sendEmail(opts: {
+  settings: SiteSettings;
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  headerExtra?: string;
+}): Promise<void> {
+  const resendKey = process.env.RESEND_API_KEY;
+
+  if (resendKey) {
+    // Resend path — simple API key, no SMTP setup needed
+    const resend = new Resend(resendKey);
+    // Use configured from address, or fall back to Resend's sandbox sender
+    const from = opts.settings.smtpFrom || "BOTH & CO. <onboarding@resend.dev>";
+    await resend.emails.send({
+      from,
+      to: [opts.to],
+      subject: opts.subject,
+      text: opts.text,
+      html: opts.html,
+    });
+    return;
+  }
+
+  // SMTP fallback
+  if (!opts.settings.smtpEnabled || !opts.settings.smtpHost || !opts.settings.smtpUser) return;
+  const smtpPass = process.env.SMTP_PASS;
+  if (!smtpPass) return;
+
+  const transporter = nodemailer.createTransport({
+    host: opts.settings.smtpHost,
+    port: parseInt(opts.settings.smtpPort || "587", 10),
+    secure: parseInt(opts.settings.smtpPort || "587", 10) === 465,
+    auth: { user: opts.settings.smtpUser, pass: smtpPass },
+  });
+  await transporter.sendMail({
+    from: opts.settings.smtpFrom || `BOTH & CO. <${opts.settings.smtpUser}>`,
+    to: opts.to,
+    subject: opts.subject,
+    text: opts.text,
+    html: opts.html,
   });
 }
+
+function isEmailEnabled(settings: SiteSettings): boolean {
+  // Resend: always enabled if API key is set
+  if (process.env.RESEND_API_KEY) return true;
+  // SMTP: needs the toggle + host + user
+  return !!(settings.smtpEnabled && settings.smtpHost && settings.smtpUser && process.env.SMTP_PASS);
+}
+
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 /** Send a templated notification email to a customer. */
 export async function sendOrderNotification(
@@ -59,16 +111,11 @@ export async function sendOrderNotification(
   body: string,
   ctx: NotificationContext
 ): Promise<void> {
-  if (!settings.smtpEnabled || !settings.smtpHost || !settings.smtpUser) return;
-  const smtpPass = process.env.SMTP_PASS;
-  if (!smtpPass) return;
-
+  if (!isEmailEnabled(settings)) return;
   const resolvedSubject = applyPlaceholders(subject, ctx);
   const resolvedBody = applyPlaceholders(body, ctx);
-
-  const transporter = createTransporter(settings, smtpPass);
-  await transporter.sendMail({
-    from: settings.smtpFrom || `BOTH & CO. <${settings.smtpUser}>`,
+  await sendEmail({
+    settings,
     to: toEmail,
     subject: resolvedSubject,
     text: resolvedBody,
@@ -76,7 +123,7 @@ export async function sendOrderNotification(
   });
 }
 
-/** Send a plain-text admin alert to the shop owner when a new order is placed. */
+/** Send a plain alert to the shop owner when a new order is placed. */
 export async function sendAdminOrderAlert(
   settings: SiteSettings,
   ctx: {
@@ -89,10 +136,9 @@ export async function sendAdminOrderAlert(
     phone: string;
   }
 ): Promise<void> {
-  if (!settings.smtpEnabled || !settings.smtpHost || !settings.smtpUser) return;
-  const smtpPass = process.env.SMTP_PASS;
-  if (!smtpPass) return;
+  if (!isEmailEnabled(settings)) return;
 
+  // Send to configured notification email, or fall back to smtp user email
   const dest = settings.notificationEmail || settings.smtpUser;
   if (!dest) return;
 
@@ -101,18 +147,17 @@ export async function sendAdminOrderAlert(
 
 Order: ${ctx.orderNumber}
 Total: ${ctx.total}
-Customer: ${ctx.customerName} <${ctx.customerEmail}>
+Customer: ${ctx.customerName} (${ctx.customerEmail})
 Phone: ${ctx.phone}
 Delivery Address: ${ctx.address}
 
 Items:
 ${ctx.items}
 
-Log in to the admin panel to confirm payment and update the order status.`;
+Log in to your admin panel to confirm payment and update the order status.`;
 
-  const transporter = createTransporter(settings, smtpPass);
-  await transporter.sendMail({
-    from: settings.smtpFrom || `BOTH & CO. <${settings.smtpUser}>`,
+  await sendEmail({
+    settings,
     to: dest,
     subject,
     text: body,

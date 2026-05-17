@@ -671,51 +671,22 @@ function AccessTab({ values, set }: { values: SiteSettings; set: <K extends keyo
 function EmailTab({ values, set }: { values: SiteSettings; set: <K extends keyof SiteSettings>(k: K, v: SiteSettings[K]) => void }) {
   return (
     <div className="space-y-8">
-      <Section title="Email Notifications" description="Configure SMTP credentials so BOTH & CO. can automatically send order status emails to customers. Edit the email templates themselves under Admin → Templates → Notifications.">
-        <Field label="Enable Email Sending">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <div
-              role="checkbox"
-              aria-checked={!!values.smtpEnabled}
-              onClick={() => set("smtpEnabled", !values.smtpEnabled)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none ${values.smtpEnabled ? "bg-primary" : "bg-muted"}`}
-            >
-              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition-transform ${values.smtpEnabled ? "translate-x-5" : "translate-x-0"}`} />
-            </div>
-            <span className="text-sm text-foreground">{values.smtpEnabled ? "Enabled — emails will be sent on order status changes" : "Disabled — no emails will be sent"}</span>
-          </label>
-        </Field>
 
-        <Field label="SMTP Host" hint="Your email provider's outgoing mail server. e.g. smtp.gmail.com or mail.yourdomain.com">
-          <Input value={values.smtpHost ?? ""} onChange={(e) => set("smtpHost", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="smtp.gmail.com" />
-        </Field>
+      {/* ── Easy setup: Resend ── */}
+      <Section title="Email Notifications (Easy Setup)" description="The quickest way to get order emails working. Create a free Resend account, copy your API key, and paste it into the server secrets panel.">
 
-        <Field label="SMTP Port" hint="Usually 587 (TLS/STARTTLS) or 465 (SSL). Use 587 if unsure.">
-          <Input value={values.smtpPort ?? "587"} onChange={(e) => set("smtpPort", e.target.value)} className="rounded-none border-border bg-background font-mono w-40" placeholder="587" />
-        </Field>
+        <div className="bg-muted/30 border border-border p-5 space-y-3 text-sm">
+          <p className="text-xs uppercase tracking-widest text-primary font-semibold">Recommended: Resend (free, no 2FA needed)</p>
+          <ol className="space-y-2 text-muted-foreground list-decimal list-inside">
+            <li>Go to <strong className="text-foreground">resend.com</strong> and create a free account</li>
+            <li>In the Resend dashboard, click <strong className="text-foreground">API Keys → Create API Key</strong></li>
+            <li>Copy the key, then open the <strong className="text-foreground">Secrets</strong> panel (lock icon in the left sidebar)</li>
+            <li>Add a secret named <code className="bg-muted px-1.5 py-0.5 font-mono text-foreground">RESEND_API_KEY</code> and paste the value</li>
+            <li>Set your notification email below and save — done!</li>
+          </ol>
+        </div>
 
-        <Field label="SMTP Username" hint="Usually your full email address.">
-          <Input value={values.smtpUser ?? ""} onChange={(e) => set("smtpUser", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="orders@yourdomain.com" />
-        </Field>
-
-        <Field label="From Address" hint="The name and address customers see as the sender. e.g. BOTH &amp; CO. &lt;orders@yourdomain.com&gt;">
-          <Input value={values.smtpFrom ?? ""} onChange={(e) => set("smtpFrom", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="BOTH & CO. <orders@yourdomain.com>" />
-        </Field>
-
-        <Field label="SMTP Password">
-          <div className="bg-muted/30 border border-border p-4 text-sm text-muted-foreground">
-            <p>
-              For security, the password is stored as a server secret named{" "}
-              <code className="bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">SMTP_PASS</code>.
-              Set it in the <strong className="text-foreground">Secrets</strong> panel on the left sidebar —
-              it is never exposed here.{" "}
-              <strong className="text-foreground">For Gmail, use an App Password</strong> (not your regular password).
-              Generate one at: Google Account → Security → 2-Step Verification → App passwords.
-            </p>
-          </div>
-        </Field>
-
-        <Field label="Admin Notification Email" hint="Where to send order alerts when a customer places an order. Usually your own inbox.">
+        <Field label="Admin Notification Email" hint="Your inbox — where order sale alerts get sent every time a customer places an order.">
           <Input
             value={values.notificationEmail ?? ""}
             onChange={(e) => set("notificationEmail", e.target.value)}
@@ -724,6 +695,40 @@ function EmailTab({ values, set }: { values: SiteSettings; set: <K extends keyof
             type="email"
           />
         </Field>
+
+        <Field label="From Address (optional)" hint="Who the email appears to come from. Leave blank to use the Resend default. e.g. BOTH & CO. <hello@bothandco.com>">
+          <Input
+            value={values.smtpFrom ?? ""}
+            onChange={(e) => set("smtpFrom", e.target.value)}
+            className="rounded-none border-border bg-background font-mono"
+            placeholder="BOTH & CO. <hello@bothandco.com>"
+          />
+        </Field>
+      </Section>
+
+      {/* ── Advanced: SMTP ── */}
+      <Section title="Advanced — SMTP (optional)" description="Only needed if you prefer to send through your own mail server or Gmail. Resend above is easier.">
+        <Field label="Enable SMTP">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              role="checkbox"
+              aria-checked={!!values.smtpEnabled}
+              onClick={() => set("smtpEnabled", !values.smtpEnabled)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors ${values.smtpEnabled ? "bg-primary" : "bg-muted"}`}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${values.smtpEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </div>
+            <span className="text-sm text-foreground">{values.smtpEnabled ? "SMTP enabled" : "SMTP disabled"}</span>
+          </label>
+        </Field>
+
+        <Field label="SMTP Host"><Input value={values.smtpHost ?? ""} onChange={(e) => set("smtpHost", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="smtp.gmail.com" /></Field>
+        <Field label="SMTP Port"><Input value={values.smtpPort ?? "587"} onChange={(e) => set("smtpPort", e.target.value)} className="rounded-none border-border bg-background font-mono w-32" placeholder="587" /></Field>
+        <Field label="SMTP Username"><Input value={values.smtpUser ?? ""} onChange={(e) => set("smtpUser", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="orders@yourdomain.com" /></Field>
+
+        <div className="bg-muted/30 border border-border p-4 text-xs text-muted-foreground">
+          SMTP password is stored as server secret <code className="bg-muted px-1 font-mono text-foreground">SMTP_PASS</code> in the Secrets panel. For Gmail, you need an App Password from Google Account → Security → App passwords (requires 2-Step Verification).
+        </div>
       </Section>
     </div>
   );
