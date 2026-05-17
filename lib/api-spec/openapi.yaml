@@ -991,6 +991,8 @@ components:
           type: string
         smtpFrom:
           type: string
+        notificationEmail:
+          type: string
 
     SiteSettingsUpdate:
       type: object
@@ -1052,6 +1054,8 @@ components:
         smtpUser:
           type: string
         smtpFrom:
+          type: string
+        notificationEmail:
           type: string
 
     CartItem:

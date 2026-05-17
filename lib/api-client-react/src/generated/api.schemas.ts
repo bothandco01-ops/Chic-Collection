@@ -130,6 +130,7 @@ export interface SiteSettings {
   smtpPort?: string;
   smtpUser?: string;
   smtpFrom?: string;
+  notificationEmail?: string;
 }
 
 export interface SiteSettingsUpdate {
@@ -160,6 +161,7 @@ export interface SiteSettingsUpdate {
   smtpPort?: string;
   smtpUser?: string;
   smtpFrom?: string;
+  notificationEmail?: string;
 }
 
 export interface CartItem {

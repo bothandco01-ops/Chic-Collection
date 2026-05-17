@@ -20,6 +20,38 @@ function applyPlaceholders(template: string, ctx: NotificationContext): string {
     .replace(/\{\{status\}\}/g, ctx.status);
 }
 
+function buildHtml(body: string, headerExtra?: string): string {
+  const lines = body
+    .split("\n")
+    .map((line) => `<p style="margin:0 0 10px 0;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#333;line-height:1.6;">${line || "&nbsp;"}</p>`)
+    .join("");
+  return `<!DOCTYPE html>
+<html>
+<body style="background:#f4f4f4;margin:0;padding:32px;">
+  <div style="max-width:580px;margin:0 auto;background:#fff;border:1px solid #ddd;">
+    <div style="background:#110e0e;padding:24px 32px;">
+      <div style="font-family:Georgia,serif;font-size:24px;font-weight:bold;font-style:italic;letter-spacing:3px;color:#f5ece4;">BOTH &amp; CO.</div>
+      ${headerExtra ? `<div style="font-family:sans-serif;font-size:11px;color:#d490a9;letter-spacing:2px;text-transform:uppercase;margin-top:4px;">${headerExtra}</div>` : ""}
+    </div>
+    <div style="padding:32px;">${lines}</div>
+    <div style="padding:16px 32px;border-top:1px solid #eee;background:#fafafa;">
+      <p style="margin:0;font-family:sans-serif;font-size:11px;color:#999;">BOTH &amp; CO. — Luxury Nigerian Womenswear Accessories</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+function createTransporter(settings: SiteSettings, smtpPass: string) {
+  return nodemailer.createTransport({
+    host: settings.smtpHost,
+    port: parseInt(settings.smtpPort || "587", 10),
+    secure: parseInt(settings.smtpPort || "587", 10) === 465,
+    auth: { user: settings.smtpUser, pass: smtpPass },
+  });
+}
+
+/** Send a templated notification email to a customer. */
 export async function sendOrderNotification(
   settings: SiteSettings,
   toEmail: string,
@@ -27,48 +59,63 @@ export async function sendOrderNotification(
   body: string,
   ctx: NotificationContext
 ): Promise<void> {
-  if (!settings.smtpEnabled || !settings.smtpHost || !settings.smtpUser) {
-    return;
-  }
-
+  if (!settings.smtpEnabled || !settings.smtpHost || !settings.smtpUser) return;
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpPass) return;
-
-  const transporter = nodemailer.createTransport({
-    host: settings.smtpHost,
-    port: parseInt(settings.smtpPort || "587", 10),
-    secure: parseInt(settings.smtpPort || "587", 10) === 465,
-    auth: { user: settings.smtpUser, pass: smtpPass },
-  });
 
   const resolvedSubject = applyPlaceholders(subject, ctx);
   const resolvedBody = applyPlaceholders(body, ctx);
 
-  const htmlBody = resolvedBody
-    .split("\n")
-    .map((line) => `<p style="margin:0 0 8px 0;font-family:sans-serif;font-size:14px;color:#333;">${line}</p>`)
-    .join("");
-
+  const transporter = createTransporter(settings, smtpPass);
   await transporter.sendMail({
-    from: settings.smtpFrom || settings.smtpUser,
+    from: settings.smtpFrom || `BOTH & CO. <${settings.smtpUser}>`,
     to: toEmail,
     subject: resolvedSubject,
     text: resolvedBody,
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <body style="background:#f5f5f5;padding:32px;">
-        <div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;padding:32px;">
-          <div style="font-family:serif;font-size:22px;font-weight:bold;letter-spacing:2px;margin-bottom:24px;color:#111;">
-            BOTH &amp; CO.
-          </div>
-          ${htmlBody}
-          <div style="margin-top:32px;padding-top:16px;border-top:1px solid #eee;font-family:sans-serif;font-size:12px;color:#999;">
-            BOTH &amp; CO. — Luxury Nigerian Womenswear Accessories
-          </div>
-        </div>
-      </body>
-      </html>
-    `,
+    html: buildHtml(resolvedBody),
+  });
+}
+
+/** Send a plain-text admin alert to the shop owner when a new order is placed. */
+export async function sendAdminOrderAlert(
+  settings: SiteSettings,
+  ctx: {
+    orderNumber: string;
+    customerName: string;
+    customerEmail: string;
+    total: string;
+    items: string;
+    address: string;
+    phone: string;
+  }
+): Promise<void> {
+  if (!settings.smtpEnabled || !settings.smtpHost || !settings.smtpUser) return;
+  const smtpPass = process.env.SMTP_PASS;
+  if (!smtpPass) return;
+
+  const dest = settings.notificationEmail || settings.smtpUser;
+  if (!dest) return;
+
+  const subject = `New Order — ${ctx.orderNumber} (${ctx.total})`;
+  const body = `New order received on BOTH & CO.
+
+Order: ${ctx.orderNumber}
+Total: ${ctx.total}
+Customer: ${ctx.customerName} <${ctx.customerEmail}>
+Phone: ${ctx.phone}
+Delivery Address: ${ctx.address}
+
+Items:
+${ctx.items}
+
+Log in to the admin panel to confirm payment and update the order status.`;
+
+  const transporter = createTransporter(settings, smtpPass);
+  await transporter.sendMail({
+    from: settings.smtpFrom || `BOTH & CO. <${settings.smtpUser}>`,
+    to: dest,
+    subject,
+    text: body,
+    html: buildHtml(body, "New Sale Alert"),
   });
 }

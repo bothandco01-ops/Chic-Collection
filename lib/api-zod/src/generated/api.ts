@@ -668,7 +668,8 @@ export const GetSiteSettingsResponse = zod.object({
   "smtpHost": zod.string().optional(),
   "smtpPort": zod.string().optional(),
   "smtpUser": zod.string().optional(),
-  "smtpFrom": zod.string().optional()
+  "smtpFrom": zod.string().optional(),
+  "notificationEmail": zod.string().optional()
 })
 
 
@@ -833,7 +834,8 @@ export const UpdateSiteSettingsBody = zod.object({
   "smtpHost": zod.string().optional(),
   "smtpPort": zod.string().optional(),
   "smtpUser": zod.string().optional(),
-  "smtpFrom": zod.string().optional()
+  "smtpFrom": zod.string().optional(),
+  "notificationEmail": zod.string().optional()
 })
 
 export const UpdateSiteSettingsResponse = zod.object({
@@ -874,7 +876,8 @@ export const UpdateSiteSettingsResponse = zod.object({
   "smtpHost": zod.string().optional(),
   "smtpPort": zod.string().optional(),
   "smtpUser": zod.string().optional(),
-  "smtpFrom": zod.string().optional()
+  "smtpFrom": zod.string().optional(),
+  "notificationEmail": zod.string().optional()
 })
 
 

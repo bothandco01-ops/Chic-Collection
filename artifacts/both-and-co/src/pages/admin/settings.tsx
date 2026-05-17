@@ -702,14 +702,28 @@ function EmailTab({ values, set }: { values: SiteSettings; set: <K extends keyof
           <Input value={values.smtpFrom ?? ""} onChange={(e) => set("smtpFrom", e.target.value)} className="rounded-none border-border bg-background font-mono" placeholder="BOTH & CO. <orders@yourdomain.com>" />
         </Field>
 
-        <div className="bg-muted/30 border border-border p-4 rounded-none text-sm text-muted-foreground">
-          <p className="font-semibold text-foreground text-xs uppercase tracking-widest mb-2">SMTP Password</p>
-          <p>
-            For security, the SMTP password is stored as a server environment secret named{" "}
-            <code className="bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">SMTP_PASS</code>.
-            Set it in your deployment environment secrets — it is never exposed through the admin panel.
-          </p>
-        </div>
+        <Field label="SMTP Password">
+          <div className="bg-muted/30 border border-border p-4 text-sm text-muted-foreground">
+            <p>
+              For security, the password is stored as a server secret named{" "}
+              <code className="bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">SMTP_PASS</code>.
+              Set it in the <strong className="text-foreground">Secrets</strong> panel on the left sidebar —
+              it is never exposed here.{" "}
+              <strong className="text-foreground">For Gmail, use an App Password</strong> (not your regular password).
+              Generate one at: Google Account → Security → 2-Step Verification → App passwords.
+            </p>
+          </div>
+        </Field>
+
+        <Field label="Admin Notification Email" hint="Where to send order alerts when a customer places an order. Usually your own inbox.">
+          <Input
+            value={values.notificationEmail ?? ""}
+            onChange={(e) => set("notificationEmail", e.target.value)}
+            className="rounded-none border-border bg-background font-mono"
+            placeholder="Bothandco01@gmail.com"
+            type="email"
+          />
+        </Field>
       </Section>
     </div>
   );

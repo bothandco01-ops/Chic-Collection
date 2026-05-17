@@ -53,6 +53,8 @@ export const siteSettingsTable = pgTable("site_settings", {
   smtpPort: text("smtp_port").notNull().default("587"),
   smtpUser: text("smtp_user").notNull().default(""),
   smtpFrom: text("smtp_from").notNull().default(""),
+  // Where to send admin order alerts (owner's inbox)
+  notificationEmail: text("notification_email").notNull().default(""),
 
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

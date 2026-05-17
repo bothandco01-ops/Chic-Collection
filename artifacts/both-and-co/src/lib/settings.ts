@@ -44,6 +44,7 @@ export const SETTINGS_DEFAULTS: SiteSettings = {
   smtpPort: "587",
   smtpUser: "",
   smtpFrom: "",
+  notificationEmail: "",
 };
 
 export function useSiteSettings(): SiteSettings {

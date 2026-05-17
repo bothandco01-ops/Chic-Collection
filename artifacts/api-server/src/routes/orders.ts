@@ -3,7 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, productsTable, cartItemsTable, deliveryZonesTable, couponsTable, pageContentTable } from "@workspace/db";
 import { getAuth } from "@clerk/express";
 import { getOrCreateSettings } from "./site-settings.js";
-import { sendOrderNotification } from "../lib/email.js";
+import { sendOrderNotification, sendAdminOrderAlert } from "../lib/email.js";
 
 const router = Router();
 
@@ -124,31 +124,46 @@ router.post("/", async (req, res) => {
 
     const enriched = await enrichOrder(order);
 
-    // Fire "order placed" notification email (non-blocking)
-    const customerEmail = guestEmail;
-    if (customerEmail) {
-      void (async () => {
-        try {
+    // Fire notifications (non-blocking — never delay the response)
+    void (async () => {
+      try {
+        const settings = await getOrCreateSettings();
+        const invoiceNo = formatInvoiceNumber(order.id, order.createdAt);
+        const itemLines = enriched.items.map((i: { product?: { name?: string } | null; productId: number; quantity: number; price: number }) =>
+          `${i.product?.name || `Product #${i.productId}`} x${i.quantity} — ₦${(i.price * i.quantity).toLocaleString()}`
+        ).join("\n");
+
+        // 1. Admin alert — always fires to the shop owner when SMTP is on
+        await sendAdminOrderAlert(settings, {
+          orderNumber: invoiceNo,
+          customerName: guestName || "Unknown",
+          customerEmail: guestEmail || "No email provided",
+          total: `₦${order.totalAmount.toLocaleString()}`,
+          items: itemLines,
+          address: shippingAddress || "Not specified",
+          phone: phone || "Not provided",
+        });
+
+        // 2. Customer confirmation — only if template exists and customer has email
+        if (guestEmail) {
           const [templateRow] = await db.select().from(pageContentTable).where(eq(pageContentTable.slug, "notification-order-placed"));
-          if (!templateRow) return;
-          let tpl: { subject: string; body: string };
-          try { tpl = JSON.parse(templateRow.body); } catch { return; }
-          const settings = await getOrCreateSettings();
-          const invoiceNo = formatInvoiceNumber(order.id, order.createdAt);
-          const itemLines = enriched.items.map((i: { product?: { name?: string } | null; productId: number; quantity: number; price: number }) => `${i.product?.name || `Product #${i.productId}`} x${i.quantity} — ₦${(i.price * i.quantity).toLocaleString()}`).join("\n");
-          await sendOrderNotification(settings, customerEmail, tpl.subject, tpl.body, {
-            name: guestName || "Customer",
-            orderNumber: invoiceNo,
-            total: `₦${order.totalAmount.toLocaleString()}`,
-            items: itemLines,
-            address: shippingAddress || "",
-            status: "pending",
-          });
-        } catch {
-          // Non-critical — do not fail the order creation
+          if (templateRow) {
+            let tpl: { subject: string; body: string };
+            try { tpl = JSON.parse(templateRow.body); } catch { return; }
+            await sendOrderNotification(settings, guestEmail, tpl.subject, tpl.body, {
+              name: guestName || "Customer",
+              orderNumber: invoiceNo,
+              total: `₦${order.totalAmount.toLocaleString()}`,
+              items: itemLines,
+              address: shippingAddress || "",
+              status: "pending",
+            });
+          }
         }
-      })();
-    }
+      } catch {
+        // Non-critical — never fail order creation over email
+      }
+    })();
 
     res.status(201).json(enriched);
   } catch (err) {

@@ -37,4 +37,5 @@ export interface SiteSettings {
   smtpPort?: string;
   smtpUser?: string;
   smtpFrom?: string;
+  notificationEmail?: string;
 }
