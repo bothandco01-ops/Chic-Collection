@@ -15,10 +15,10 @@ async function getCartWithProducts(sessionId: string) {
   return enriched;
 }
 
-router.get("/", async (req, res) => {
+router.get("/", async (req, res): Promise<void> => {
   try {
     const sessionId = req.headers["x-session-id"] as string || req.query.sessionId as string;
-    if (!sessionId) return res.json([]);
+    if (!sessionId) { res.json([]); return; }
     const items = await getCartWithProducts(sessionId);
     res.json(items);
   } catch (err) {
@@ -27,10 +27,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res): Promise<void> => {
   try {
     const { productId, quantity, size, sessionId } = req.body;
-    if (!sessionId) return res.status(400).json({ error: "sessionId required" });
+    if (!sessionId) { res.status(400).json({ error: "sessionId required" }); return; }
 
     const existing = await db.select().from(cartItemsTable).where(
       and(eq(cartItemsTable.sessionId, sessionId), eq(cartItemsTable.productId, productId))
@@ -42,7 +42,8 @@ router.post("/", async (req, res) => {
         .where(eq(cartItemsTable.id, existing[0].id))
         .returning();
       const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
-      return res.status(201).json({ ...updated, product: product || null });
+      res.status(201).json({ ...updated, product: product || null });
+      return;
     }
 
     const [item] = await db.insert(cartItemsTable).values({
@@ -56,12 +57,12 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", async (req, res): Promise<void> => {
   try {
     const id = parseInt(req.params.id);
     const { quantity } = req.body;
     const [item] = await db.update(cartItemsTable).set({ quantity }).where(eq(cartItemsTable.id, id)).returning();
-    if (!item) return res.status(404).json({ error: "Cart item not found" });
+    if (!item) { res.status(404).json({ error: "Cart item not found" }); return; }
     const [product] = await db.select().from(productsTable).where(eq(productsTable.id, item.productId));
     res.json({ ...item, product: product || null });
   } catch (err) {

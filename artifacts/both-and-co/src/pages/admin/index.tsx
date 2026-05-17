@@ -4,6 +4,7 @@ import { Layout } from "@/components/layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/react";
 import { ShoppingBag, Package, CheckCircle, TrendingUp, Clock, ChevronRight, Info } from "lucide-react";
+import { isUserAdmin } from "@/lib/admin";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: "Awaiting Payment", color: "text-yellow-400" },
@@ -17,7 +18,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser();
   const isSignedIn = !!user;
-  const isAdmin = user?.publicMetadata?.role === "admin";
+  const isAdmin = isUserAdmin(user);
 
   const { data: stats, isLoading } = useGetAdminStats({
     query: { queryKey: getGetAdminStatsQueryKey(), enabled: isAdmin },
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
               <div>
                 <h2 className="font-serif text-xl mb-2">Admin Access Required</h2>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  You are signed in but your account does not have admin privileges yet.
+                  Your account does not have admin privileges. Contact the site owner to grant you access.
                 </p>
               </div>
             </div>

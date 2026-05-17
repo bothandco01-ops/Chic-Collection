@@ -10,9 +10,10 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/react";
-import { Link } from "wouter";
+import { Link, Redirect } from "wouter";
 import { ChevronLeft, Eye, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isUserAdmin } from "@/lib/admin";
 
 const statusOptions = ["pending", "payment_uploaded", "confirmed", "shipped", "delivered", "cancelled"];
 const statusConfig: Record<string, { label: string; color: string }> = {
@@ -25,8 +26,9 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 };
 
 export default function AdminOrders() {
-  const { user } = useUser();
-  const isAdmin = user?.publicMetadata?.role === "admin";
+  const { user, isLoaded } = useUser();
+  const isSignedIn = !!user;
+  const isAdmin = isUserAdmin(user);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState("all");
@@ -58,6 +60,19 @@ export default function AdminOrders() {
       }
     );
   };
+
+  if (!isLoaded) {
+    return (
+      <Layout>
+        <div className="max-w-6xl mx-auto px-4 py-16">
+          <Skeleton className="h-10 w-48 mb-10" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   if (!isAdmin) {
     return (

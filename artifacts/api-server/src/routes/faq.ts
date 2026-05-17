@@ -15,10 +15,10 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
-    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     const { question, answer, order } = req.body;
     const [entry] = await db.insert(faqEntriesTable).values({ question, answer, order: order ?? 0 }).returning();
     res.status(201).json(entry);
@@ -28,17 +28,17 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
-    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     const id = parseInt(req.params.id);
     const updates: Record<string, unknown> = {};
     if (req.body.question !== undefined) updates.question = req.body.question;
     if (req.body.answer !== undefined) updates.answer = req.body.answer;
     if (req.body.order !== undefined) updates.order = req.body.order;
     const [entry] = await db.update(faqEntriesTable).set(updates).where(eq(faqEntriesTable.id, id)).returning();
-    if (!entry) return res.status(404).json({ error: "FAQ entry not found" });
+    if (!entry) { res.status(404).json({ error: "FAQ entry not found" }); return; }
     res.json(entry);
   } catch (err) {
     req.log.error(err);
@@ -46,10 +46,10 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
-    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     const id = parseInt(req.params.id);
     await db.delete(faqEntriesTable).where(eq(faqEntriesTable.id, id));
     res.status(204).send();

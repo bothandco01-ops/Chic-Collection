@@ -16,10 +16,10 @@ async function enrichOrder(order: typeof ordersTable.$inferSelect) {
   return { ...order, items: enrichedItems };
 }
 
-router.get("/", async (req, res) => {
+router.get("/", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
-    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
     const orders = await db.select().from(ordersTable).where(eq(ordersTable.userId, auth.userId));
     const enriched = await Promise.all(orders.map(enrichOrder));
     res.json(enriched);
@@ -70,11 +70,11 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req, res): Promise<void> => {
   try {
     const id = parseInt(req.params.id);
     const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
     const enriched = await enrichOrder(order);
     res.json(enriched);
   } catch (err) {
@@ -83,7 +83,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/:id/payment-proof", async (req, res) => {
+router.post("/:id/payment-proof", async (req, res): Promise<void> => {
   try {
     const id = parseInt(req.params.id);
     const { paymentProofUrl } = req.body;
@@ -91,7 +91,7 @@ router.post("/:id/payment-proof", async (req, res) => {
       .set({ paymentProofUrl, status: "payment_uploaded" })
       .where(eq(ordersTable.id, id))
       .returning();
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
     const enriched = await enrichOrder(order);
     res.json(enriched);
   } catch (err) {

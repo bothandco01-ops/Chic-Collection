@@ -1,15 +1,31 @@
 import { Router } from "express";
 import { eq, count, sum } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, productsTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 
 const router = Router();
 
-function requireAuth(req: any, res: any, next: any) {
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+async function requireAdmin(req: any, res: any, next: any) {
   const auth = getAuth(req);
   if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
-  next();
+  try {
+    const user = await clerkClient.users.getUser(auth.userId);
+    if (user.publicMetadata?.role === "admin") return next();
+    const emails = user.emailAddresses.map((e) => e.emailAddress.toLowerCase());
+    if (emails.some((e) => ADMIN_EMAILS.includes(e))) return next();
+    return res.status(403).json({ error: "Forbidden" });
+  } catch (err) {
+    req.log.error(err);
+    return res.status(500).json({ error: "Failed to verify admin" });
+  }
 }
+
+const requireAuth = requireAdmin;
 
 router.get("/stats", requireAuth, async (req, res) => {
   try {
@@ -74,12 +90,12 @@ router.get("/orders", requireAuth, async (req, res) => {
   }
 });
 
-router.patch("/orders/:id/status", requireAuth, async (req, res) => {
+router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> => {
   try {
     const id = parseInt(req.params.id);
     const { status } = req.body;
     const [order] = await db.update(ordersTable).set({ status }).where(eq(ordersTable.id, id)).returning();
-    if (!order) return res.status(404).json({ error: "Order not found" });
+    if (!order) { res.status(404).json({ error: "Order not found" }); return; }
     const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, order.id));
     const enrichedItems = await Promise.all(
       items.map(async (item) => {

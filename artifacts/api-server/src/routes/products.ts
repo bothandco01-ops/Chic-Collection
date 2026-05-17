@@ -1,9 +1,25 @@
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
 import { db, productsTable } from "@workspace/db";
-import { getAuth } from "@clerk/express";
+import { getAuth, clerkClient } from "@clerk/express";
 
 const router = Router();
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+async function isAdminUser(userId: string): Promise<boolean> {
+  try {
+    const user = await clerkClient.users.getUser(userId);
+    if (user.publicMetadata?.role === "admin") return true;
+    const emails = user.emailAddresses.map((e) => e.emailAddress.toLowerCase());
+    return emails.some((e) => ADMIN_EMAILS.includes(e));
+  } catch {
+    return false;
+  }
+}
 
 router.get("/", async (req, res) => {
   try {
@@ -29,7 +45,7 @@ router.get("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const [product] = await db.select().from(productsTable).where(eq(productsTable.id, id));
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product) { res.status(404).json({ error: "Product not found" }); return; }
     res.json(product);
   } catch (err) {
     req.log.error(err);
@@ -37,10 +53,11 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
-    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+    if (!(await isAdminUser(auth.userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const { name, description, price, category, imageUrl, inStock, featured, sizes } = req.body;
     const [product] = await db.insert(productsTable).values({
       name, description, price, category, imageUrl,
@@ -55,10 +72,11 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
-    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+    if (!(await isAdminUser(auth.userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const id = parseInt(req.params.id);
     const updates: Record<string, unknown> = {};
     const allowed = ["name", "description", "price", "category", "imageUrl", "inStock", "featured", "sizes"];
@@ -66,7 +84,7 @@ router.patch("/:id", async (req, res) => {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     }
     const [product] = await db.update(productsTable).set(updates).where(eq(productsTable.id, id)).returning();
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product) { res.status(404).json({ error: "Product not found" }); return; }
     res.json(product);
   } catch (err) {
     req.log.error(err);
@@ -74,10 +92,11 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
-    if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
+    if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+    if (!(await isAdminUser(auth.userId))) { res.status(403).json({ error: "Forbidden" }); return; }
     const id = parseInt(req.params.id);
     await db.delete(productsTable).where(eq(productsTable.id, id));
     res.status(204).send();

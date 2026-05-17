@@ -22,6 +22,7 @@ import { useUser } from "@clerk/react";
 import { Link, Redirect } from "wouter";
 import { ChevronLeft, Plus, Pencil, Trash2, X, Upload, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isUserAdmin } from "@/lib/admin";
 
 const productSchema = z.object({
   name: z.string().min(2, "Name required"),
@@ -155,7 +156,7 @@ function ImageUploader({
 
 export default function AdminProducts() {
   const { user, isLoaded } = useUser();
-  const isAdmin = user?.publicMetadata?.role === "admin";
+  const isAdmin = isUserAdmin(user);
   const isSignedIn = !!user;
   const queryClient = useQueryClient();
   const { toast } = useToast();
