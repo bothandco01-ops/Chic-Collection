@@ -245,9 +245,15 @@ export default function Checkout() {
           </div>
 
           <div className="bg-card border border-border p-6 md:p-8">
-            <h3 className="font-serif text-xl mb-6">Upload Payment Proof</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-serif text-xl">Upload Payment Proof</h3>
+              <span className="text-xs text-primary tracking-widest uppercase">Required</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
+              You must upload a screenshot of your bank transfer before your order can be confirmed.
+            </p>
             <div
-              className="border-2 border-dashed border-border p-10 text-center cursor-pointer hover:border-primary transition-colors relative"
+              className={`border-2 border-dashed p-10 text-center cursor-pointer transition-colors relative ${proofFile ? "border-primary bg-primary/5" : "border-border hover:border-primary"}`}
               onClick={() => document.getElementById("proof-upload")?.click()}
               data-testid="upload-payment-proof"
             >
@@ -255,13 +261,13 @@ export default function Checkout() {
               {proofFile ? (
                 <div>
                   <img src={proofFile} alt="Payment proof" className="max-h-48 mx-auto object-contain mb-4" />
-                  <p className="text-sm text-primary">Image uploaded — click to change</p>
+                  <p className="text-sm text-primary">Screenshot uploaded — click to change</p>
                 </div>
               ) : (
                 <div>
                   <Upload className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground text-sm">Click to upload your payment screenshot</p>
-                  <p className="text-xs text-muted-foreground mt-2">JPG, PNG accepted</p>
+                  <p className="text-foreground text-sm font-medium">Click to upload your payment screenshot</p>
+                  <p className="text-xs text-muted-foreground mt-2">JPG or PNG — this is required to process your order</p>
                 </div>
               )}
             </div>
@@ -271,8 +277,13 @@ export default function Checkout() {
               disabled={!proofFile || proofUploading}
               data-testid="button-submit-proof"
             >
-              {proofUploading ? "Submitting..." : "Submit Payment Proof"}
+              {proofUploading ? "Submitting..." : proofFile ? "Confirm & Submit Payment Proof" : "Upload Screenshot to Continue"}
             </Button>
+            {!proofFile && (
+              <p className="text-center text-xs text-muted-foreground mt-3">
+                The button above will activate once you upload your screenshot.
+              </p>
+            )}
           </div>
         </div>
       </Layout>
@@ -309,28 +320,28 @@ export default function Checkout() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                 <FormField control={form.control} name="fullName" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Full Name</FormLabel>
+                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Full Name <span className="text-primary">*</span></FormLabel>
                     <FormControl><Input {...field} className="rounded-none border-border bg-card" data-testid="input-full-name" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Email Address</FormLabel>
+                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Email Address <span className="text-primary">*</span></FormLabel>
                     <FormControl><Input {...field} type="email" className="rounded-none border-border bg-card" data-testid="input-email" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="phone" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Phone Number</FormLabel>
+                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Phone Number <span className="text-primary">*</span></FormLabel>
                     <FormControl><Input {...field} type="tel" placeholder="080XXXXXXXX" className="rounded-none border-border bg-card" data-testid="input-phone" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="address" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Street Address</FormLabel>
+                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Street Address <span className="text-primary">*</span></FormLabel>
                     <FormControl><Input {...field} placeholder="e.g. 14 Adeola Odeku Street" className="rounded-none border-border bg-card" data-testid="input-address" /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -338,14 +349,14 @@ export default function Checkout() {
                 <div className="grid grid-cols-2 gap-4">
                   <FormField control={form.control} name="city" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">City / Area</FormLabel>
+                      <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">City / Area <span className="text-primary">*</span></FormLabel>
                       <FormControl><Input {...field} placeholder="e.g. Victoria Island" className="rounded-none border-border bg-card" data-testid="input-city" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="state" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">State</FormLabel>
+                      <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">State <span className="text-primary">*</span></FormLabel>
                       <FormControl>
                         <select
                           {...field}
@@ -369,8 +380,8 @@ export default function Checkout() {
                 </div>
                 <FormField control={form.control} name="notes" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Order Notes (optional)</FormLabel>
-                    <FormControl><Textarea {...field} rows={2} className="rounded-none border-border bg-card resize-none" data-testid="input-notes" /></FormControl>
+                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Special Instructions / Notes</FormLabel>
+                    <FormControl><Textarea {...field} rows={3} placeholder="e.g. preferred delivery time, gift message, special requests..." className="rounded-none border-border bg-card resize-none" data-testid="input-notes" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
