@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "==> Installing pnpm..."
-npm install -g pnpm@latest-10
+echo "==> Enabling pnpm via corepack..."
+# Render's Node.js ships with corepack — avoids npm install -g which fails on rofs
+corepack enable pnpm
 
-echo "==> Installing dependencies (no frozen lockfile to handle platform differences)..."
-pnpm install --no-frozen-lockfile
+echo "==> Installing dependencies..."
+# --node-linker=hoisted avoids pnpm workspace symlinks, which fail on Render's rofs filesystem
+pnpm install --no-frozen-lockfile --node-linker=hoisted
 
 echo "==> Building shared TypeScript libraries..."
 pnpm run typecheck:libs
