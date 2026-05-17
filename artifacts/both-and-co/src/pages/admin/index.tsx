@@ -1,9 +1,9 @@
 import { useGetAdminStats, getGetAdminStatsQueryKey } from "@workspace/api-client-react";
-import { Link } from "wouter";
+import { Link, Redirect } from "wouter";
 import { Layout } from "@/components/layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/react";
-import { ShoppingBag, Package, CheckCircle, TrendingUp, Clock, ChevronRight } from "lucide-react";
+import { ShoppingBag, Package, CheckCircle, TrendingUp, Clock, ChevronRight, Info } from "lucide-react";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: "Awaiting Payment", color: "text-yellow-400" },
@@ -16,6 +16,7 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser();
+  const isSignedIn = !!user;
   const isAdmin = user?.publicMetadata?.role === "admin";
 
   const { data: stats, isLoading } = useGetAdminStats({
@@ -27,7 +28,7 @@ export default function AdminDashboard() {
       <Layout>
         <div className="max-w-6xl mx-auto px-4 py-16">
           <Skeleton className="h-10 w-48 mb-10" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
           </div>
         </div>
@@ -35,17 +36,61 @@ export default function AdminDashboard() {
     );
   }
 
+  if (!isSignedIn) return <Redirect to="/sign-in" />;
+
   if (!isAdmin) {
     return (
       <Layout>
-        <div className="max-w-lg mx-auto px-4 py-32 text-center">
-          <h2 className="font-serif italic text-3xl mb-4">Access Denied</h2>
-          <p className="text-muted-foreground mb-10">You do not have permission to access the admin dashboard.</p>
-          <Link href="/">
-            <button className="border border-border px-10 py-4 text-xs tracking-widest uppercase hover:border-primary hover:text-primary transition-colors">
-              Return Home
-            </button>
-          </Link>
+        <div className="max-w-xl mx-auto px-4 py-32">
+          <div className="bg-card border border-border p-10">
+            <div className="flex items-start gap-4 mb-6">
+              <Info className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <h2 className="font-serif text-xl mb-2">Admin Access Required</h2>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  You are signed in but your account does not have admin privileges yet.
+                </p>
+              </div>
+            </div>
+
+            <div className="border border-border p-5 space-y-4 text-sm">
+              <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium">How to grant admin access</p>
+              <ol className="space-y-3 text-muted-foreground leading-relaxed list-none">
+                <li className="flex gap-3">
+                  <span className="text-primary font-medium flex-shrink-0">1.</span>
+                  Open your <strong className="text-foreground">Replit project</strong>, click the integrations/secrets panel and open the Clerk dashboard.
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-primary font-medium flex-shrink-0">2.</span>
+                  Go to <strong className="text-foreground">Users</strong>, find your account, and click it.
+                </li>
+                <li className="flex gap-3">
+                  <span className="text-primary font-medium flex-shrink-0">3.</span>
+                  Scroll to <strong className="text-foreground">Public metadata</strong> and set it to:
+                </li>
+              </ol>
+              <pre className="bg-background border border-border px-4 py-3 text-xs font-mono text-primary overflow-x-auto">
+{`{ "role": "admin" }`}
+              </pre>
+              <li className="flex gap-3 list-none text-muted-foreground">
+                <span className="text-primary font-medium flex-shrink-0">4.</span>
+                Save, then sign out and sign back in on this site.
+              </li>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <Link href="/">
+                <button className="border border-border px-5 py-3 text-xs tracking-widest uppercase hover:border-primary hover:text-primary transition-colors">
+                  Return Home
+                </button>
+              </Link>
+              <Link href="/sign-in">
+                <button className="bg-primary text-primary-foreground px-5 py-3 text-xs tracking-widest uppercase hover:bg-primary/90 transition-colors">
+                  Sign In Again
+                </button>
+              </Link>
+            </div>
+          </div>
         </div>
       </Layout>
     );
@@ -60,7 +105,7 @@ export default function AdminDashboard() {
             <h1 className="font-serif italic text-4xl md:text-5xl">Dashboard</h1>
             <div className="h-px w-16 bg-primary mt-3" />
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <Link href="/admin/orders">
               <button className="border border-border px-6 py-3 text-xs tracking-widest uppercase hover:border-primary hover:text-primary transition-colors" data-testid="link-admin-orders">
                 Manage Orders
@@ -75,16 +120,16 @@ export default function AdminDashboard() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
             {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
             {[
-              { label: "Total Orders", value: stats?.totalOrders || 0, icon: <Package className="h-5 w-5" />, sub: "All time" },
-              { label: "Pending Orders", value: stats?.pendingOrders || 0, icon: <Clock className="h-5 w-5" />, sub: "Awaiting confirmation" },
-              { label: "Confirmed", value: stats?.confirmedOrders || 0, icon: <CheckCircle className="h-5 w-5" />, sub: "Approved orders" },
-              { label: "Total Revenue", value: `₦${(stats?.totalRevenue || 0).toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, sub: "From confirmed orders" },
+              { label: "Total Orders", value: stats?.totalOrders ?? 0, icon: <Package className="h-5 w-5" />, sub: "All time" },
+              { label: "Pending Orders", value: stats?.pendingOrders ?? 0, icon: <Clock className="h-5 w-5" />, sub: "Need attention" },
+              { label: "Confirmed", value: stats?.confirmedOrders ?? 0, icon: <CheckCircle className="h-5 w-5" />, sub: "Approved" },
+              { label: "Revenue", value: `₦${(stats?.totalRevenue ?? 0).toLocaleString()}`, icon: <TrendingUp className="h-5 w-5" />, sub: "Confirmed orders" },
             ].map((stat) => (
               <div key={stat.label} className="bg-card border border-border p-6" data-testid={`stat-${stat.label.toLowerCase().replace(/ /g, "-")}`}>
                 <div className="flex items-center justify-between mb-4">
@@ -107,6 +152,7 @@ export default function AdminDashboard() {
               </button>
             </Link>
           </div>
+
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16" />)}
@@ -117,11 +163,9 @@ export default function AdminDashboard() {
                 <table className="w-full text-sm" data-testid="table-recent-orders">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left px-6 py-4 text-xs tracking-widest uppercase text-muted-foreground font-normal">Order</th>
-                      <th className="text-left px-6 py-4 text-xs tracking-widest uppercase text-muted-foreground font-normal hidden md:table-cell">Customer</th>
-                      <th className="text-left px-6 py-4 text-xs tracking-widest uppercase text-muted-foreground font-normal hidden md:table-cell">Date</th>
-                      <th className="text-right px-6 py-4 text-xs tracking-widest uppercase text-muted-foreground font-normal">Amount</th>
-                      <th className="text-right px-6 py-4 text-xs tracking-widest uppercase text-muted-foreground font-normal">Status</th>
+                      {["Order", "Customer", "Date", "Amount", "Status"].map((h) => (
+                        <th key={h} className={`text-left px-6 py-4 text-xs tracking-widest uppercase text-muted-foreground font-normal ${h === "Customer" || h === "Date" ? "hidden md:table-cell" : ""}`}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
@@ -130,29 +174,21 @@ export default function AdminDashboard() {
                       return (
                         <tr key={order.id} className={`${idx < (stats.recentOrders ?? []).length - 1 ? "border-b border-border" : ""} hover:bg-muted/30 transition-colors`}>
                           <td className="px-6 py-4">
-                            <Link href={`/admin/orders`}>
+                            <Link href="/admin/orders">
                               <span className="font-medium hover:text-primary transition-colors cursor-pointer">#{order.id}</span>
                             </Link>
                           </td>
-                          <td className="px-6 py-4 text-muted-foreground hidden md:table-cell">
-                            {order.guestName || "Registered user"}
-                          </td>
-                          <td className="px-6 py-4 text-muted-foreground hidden md:table-cell">
-                            {new Date(order.createdAt).toLocaleDateString("en-NG")}
-                          </td>
-                          <td className="px-6 py-4 text-right font-medium">
-                            ₦{order.totalAmount.toLocaleString()}
-                          </td>
-                          <td className={`px-6 py-4 text-right text-xs ${status.color}`}>
-                            {status.label}
-                          </td>
+                          <td className="px-6 py-4 text-muted-foreground hidden md:table-cell">{order.guestName || "Registered user"}</td>
+                          <td className="px-6 py-4 text-muted-foreground hidden md:table-cell">{new Date(order.createdAt).toLocaleDateString("en-NG")}</td>
+                          <td className="px-6 py-4 font-medium">₦{order.totalAmount.toLocaleString()}</td>
+                          <td className={`px-6 py-4 text-xs ${status.color}`}>{status.label}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               ) : (
-                <div className="p-12 text-center text-muted-foreground">No orders yet.</div>
+                <div className="p-12 text-center text-muted-foreground text-sm">No orders yet.</div>
               )}
             </div>
           )}
