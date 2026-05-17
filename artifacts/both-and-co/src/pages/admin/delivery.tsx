@@ -19,14 +19,6 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { isUserAdmin } from "@/lib/admin";
 
-const NIGERIAN_STATES = [
-  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa",
-  "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti",
-  "Enugu", "FCT (Abuja)", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano",
-  "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger",
-  "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto",
-  "Taraba", "Yobe", "Zamfara",
-];
 
 export default function AdminDelivery() {
   const { user, isLoaded } = useUser();
@@ -116,9 +108,6 @@ export default function AdminDelivery() {
     );
   };
 
-  const existingStates = new Set((zones || []).map((z) => z.state));
-  const availableStates = NIGERIAN_STATES.filter((s) => !existingStates.has(s));
-
   return (
     <AdminShell>
       <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
@@ -153,16 +142,14 @@ export default function AdminDelivery() {
               <h3 className="font-serif text-lg mb-4">Add Delivery Zone</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="text-xs tracking-widest uppercase text-muted-foreground block mb-2">State</label>
-                  <select
+                  <label className="text-xs tracking-widest uppercase text-muted-foreground block mb-2">Zone Name</label>
+                  <Input
                     value={newState}
                     onChange={(e) => setNewState(e.target.value)}
-                    className="w-full bg-background border border-border text-foreground text-sm px-3 py-2.5 focus:outline-none focus:border-primary"
-                    data-testid="select-new-state"
-                  >
-                    <option value="">Select state...</option>
-                    {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                    placeholder="e.g. Lagos, Abuja, Port Harcourt"
+                    className="rounded-none border-border bg-background"
+                    data-testid="input-new-state"
+                  />
                 </div>
                 <div>
                   <label className="text-xs tracking-widest uppercase text-muted-foreground block mb-2">Delivery Fee (₦)</label>
@@ -225,14 +212,12 @@ export default function AdminDelivery() {
                       {editingId === zone.id ? (
                         <>
                           <td className="px-5 py-3">
-                            <select
+                            <Input
                               value={editState}
                               onChange={(e) => setEditState(e.target.value)}
-                              className="bg-background border border-border text-foreground text-sm px-2 py-1.5 focus:outline-none focus:border-primary w-full"
-                            >
-                              <option value={editState}>{editState}</option>
-                              {availableStates.map((s) => <option key={s} value={s}>{s}</option>)}
-                            </select>
+                              placeholder="Zone name"
+                              className="rounded-none border-border bg-background h-8 text-sm w-full"
+                            />
                           </td>
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-1">
