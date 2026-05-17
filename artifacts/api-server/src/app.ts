@@ -3,6 +3,8 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
+import path from "path";
+import { fileURLToPath } from "url";
 import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
@@ -49,5 +51,17 @@ app.use(
 );
 
 app.use("/api", router);
+
+// In production (Render etc.), serve the built Vite frontend and handle SPA routing
+if (process.env.NODE_ENV === "production") {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  // repo root is two levels up from artifacts/api-server/dist/
+  const repoRoot = path.resolve(__dirname, "../../..");
+  const distPath = path.join(repoRoot, "artifacts/both-and-co/dist/public");
+  app.use(express.static(distPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+}
 
 export default app;
