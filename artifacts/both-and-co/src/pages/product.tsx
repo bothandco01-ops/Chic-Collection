@@ -45,30 +45,45 @@ export default function ProductDetail() {
   const handleAddToCart = () => {
     if (!product) return;
     if (availableSizes.length > 0 && !selectedSize) {
-      toast({
-        title: "Please select a size",
-        variant: "destructive"
-      });
+      toast({ title: "Please select a size", variant: "destructive" });
       return;
     }
 
+    // Show toast immediately — don't wait for server
+    toast({ title: "Added to bag", description: product.name });
+
+    // Optimistically increment cart count in cache
+    const cartKey = getGetCartQueryKey();
+    queryClient.setQueryData(cartKey, (old: unknown) => {
+      if (!Array.isArray(old)) return old;
+      const existing = old.find((i: { productId: number }) => i.productId === product.id);
+      if (existing) {
+        return old.map((i: { productId: number; quantity: number }) =>
+          i.productId === product.id ? { ...i, quantity: i.quantity + quantity } : i
+        );
+      }
+      return [...old, { id: -1, productId: product.id, quantity, size: selectedSize, product }];
+    });
+
     addToCart.mutate(
-      { 
-        data: { 
-          productId: product.id, 
-          quantity, 
+      {
+        data: {
+          productId: product.id,
+          quantity,
           size: selectedSize || undefined,
-          sessionId: getSessionId()
-        } 
+          sessionId: getSessionId(),
+        },
       },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetCartQueryKey() });
-          toast({
-            title: "Added to bag",
-            description: `${product.name} has been added to your bag.`
-          });
-        }
+          // Sync with real server data
+          queryClient.invalidateQueries({ queryKey: cartKey });
+        },
+        onError: () => {
+          // Roll back optimistic update and notify
+          queryClient.invalidateQueries({ queryKey: cartKey });
+          toast({ title: "Could not add to bag — please try again", variant: "destructive" });
+        },
       }
     );
   };
