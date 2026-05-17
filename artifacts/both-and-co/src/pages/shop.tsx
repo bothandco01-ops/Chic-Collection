@@ -31,55 +31,51 @@ export default function Shop() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-12 flex flex-col md:flex-row gap-8">
-        {/* Filters Sidebar */}
-        <aside className="w-full md:w-64 flex-shrink-0">
-          <div className="sticky top-24">
-            <h3 className="font-medium text-lg mb-6 tracking-wide border-b border-border pb-4">Categories</h3>
-            <div className="space-y-3">
-              <button 
-                onClick={() => setCategory("all")}
-                className={`block text-sm tracking-wide transition-colors ${category === "all" ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
+      {/* Category filter — horizontal tabs on all screen sizes */}
+      <div className="border-b border-border">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex gap-0 overflow-x-auto scrollbar-none">
+            {[
+              { value: "all", label: "All Pieces" },
+              { value: "heels", label: "Luxury Heels" },
+              { value: "glasses", label: "Oversized Glasses" },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setCategory(value)}
+                className={`flex-shrink-0 px-5 py-4 text-xs tracking-widest uppercase transition-colors border-b-2 ${
+                  category === value
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
               >
-                All Pieces
+                {label}
               </button>
-              <button 
-                onClick={() => setCategory("heels")}
-                className={`block text-sm tracking-wide transition-colors ${category === "heels" ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Luxury Heels
-              </button>
-              <button 
-                onClick={() => setCategory("glasses")}
-                className={`block text-sm tracking-wide transition-colors ${category === "glasses" ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                Oversized Glasses
-              </button>
-            </div>
+            ))}
           </div>
-        </aside>
+        </div>
+      </div>
 
-        {/* Product Grid */}
-        <div className="flex-1">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-            {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="space-y-4">
-                  <Skeleton className="aspect-[3/4] w-full rounded-none bg-muted" />
-                  <Skeleton className="h-4 w-2/3 bg-muted" />
-                  <Skeleton className="h-4 w-1/3 bg-muted" />
-                </div>
-              ))
-            ) : products?.length === 0 ? (
-              <div className="col-span-full py-20 text-center text-muted-foreground">
-                No products found in this category.
+      {/* Product Grid */}
+      <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12">
+          {isLoading ? (
+            Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-[3/4] w-full rounded-none bg-muted" />
+                <Skeleton className="h-3 w-2/3 bg-muted" />
+                <Skeleton className="h-3 w-1/3 bg-muted" />
               </div>
-            ) : (
-              products?.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))
-            )}
-          </div>
+            ))
+          ) : products?.length === 0 ? (
+            <div className="col-span-full py-20 text-center text-muted-foreground">
+              No products found in this category.
+            </div>
+          ) : (
+            products?.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))
+          )}
         </div>
       </div>
     </Layout>

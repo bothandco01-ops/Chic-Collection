@@ -132,21 +132,22 @@ export default function Home() {
 export function ProductCard({ product }: { product: Product }) {
   return (
     <Link href={`/shop/${product.id}`} className="group block">
-      <div className="relative aspect-[3/4] overflow-hidden bg-card mb-6">
-        <img 
-          src={product.imageUrl || (product.category === 'heels' ? '/placeholder-heels.png' : '/placeholder-glasses.png')} 
+      <div className="relative aspect-[3/4] overflow-hidden bg-card mb-3">
+        <img
+          src={product.imageUrl || (product.category === 'heels' ? '/placeholder-heels.png' : '/placeholder-glasses.png')}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
         {!product.inStock && (
-          <div className="absolute top-4 right-4 bg-background/90 text-foreground px-3 py-1 text-xs uppercase tracking-widest">
+          <div className="absolute top-2 right-2 bg-background/90 text-foreground px-2 py-0.5 text-[10px] uppercase tracking-widest">
             Sold Out
           </div>
         )}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
       </div>
-      <div className="space-y-2">
-        <h3 className="font-medium text-foreground tracking-wide">{product.name}</h3>
-        <p className="text-muted-foreground text-sm font-light">₦{product.price.toLocaleString()}</p>
+      <div className="space-y-0.5">
+        <h3 className="text-sm font-medium text-foreground tracking-wide leading-snug line-clamp-1">{product.name}</h3>
+        <p className="text-primary text-sm font-medium">₦{product.price.toLocaleString()}</p>
       </div>
     </Link>
   );
