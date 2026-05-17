@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { eq, count, sum, desc } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable, siteSettingsTable, deliveryZonesTable } from "@workspace/db";
+import { db, ordersTable, orderItemsTable, productsTable, siteSettingsTable, deliveryZonesTable, pageContentTable, servicesTable } from "@workspace/db";
 import { serialize } from "./products.js";
 import { getOrCreateSettings } from "./site-settings";
 import { getAuth, clerkClient } from "@clerk/express";
@@ -196,6 +196,76 @@ router.patch("/site-settings", requireAuth, async (req, res): Promise<void> => {
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to update settings" });
+  }
+});
+
+// ---- Page Content (admin CRUD) ----
+
+router.get("/content", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const pages = await db.select().from(pageContentTable);
+    res.json(pages);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch page content" });
+  }
+});
+
+router.put("/content/:slug", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const { slug } = req.params;
+    const { title, body } = req.body;
+    if (!title || body == null) { res.status(400).json({ error: "title and body are required" }); return; }
+    const [page] = await db
+      .insert(pageContentTable)
+      .values({ slug, title, body })
+      .onConflictDoUpdate({ target: pageContentTable.slug, set: { title, body } })
+      .returning();
+    res.json(page);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to save page content" });
+  }
+});
+
+// ---- Services (admin CRUD) ----
+
+router.post("/services", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const { title, description, icon } = req.body;
+    if (!title || !description) { res.status(400).json({ error: "title and description are required" }); return; }
+    const [service] = await db.insert(servicesTable).values({ title, description, icon: icon || null }).returning();
+    res.status(201).json(service);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to create service" });
+  }
+});
+
+router.patch("/services/:id", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const updates: Record<string, unknown> = {};
+    if (req.body.title !== undefined) updates.title = req.body.title;
+    if (req.body.description !== undefined) updates.description = req.body.description;
+    if (req.body.icon !== undefined) updates.icon = req.body.icon || null;
+    const [service] = await db.update(servicesTable).set(updates).where(eq(servicesTable.id, id)).returning();
+    if (!service) { res.status(404).json({ error: "Service not found" }); return; }
+    res.json(service);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update service" });
+  }
+});
+
+router.delete("/services/:id", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(servicesTable).where(eq(servicesTable.id, id));
+    res.status(204).send();
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to delete service" });
   }
 });
 

@@ -373,6 +373,25 @@ paths:
                 items:
                   $ref: "#/components/schemas/Service"
 
+  /pages/{slug}:
+    get:
+      operationId: getPageContent
+      tags: [pages]
+      summary: Get page content by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Page content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageContent"
+
   /admin/stats:
     get:
       operationId: getAdminStats
@@ -488,6 +507,103 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SiteSettings"
+
+  /admin/content:
+    get:
+      operationId: listAdminContent
+      tags: [admin]
+      summary: List all page content entries (admin)
+      responses:
+        '200':
+          description: All page content
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PageContent"
+
+  /admin/content/{slug}:
+    put:
+      operationId: upsertPageContent
+      tags: [admin]
+      summary: Create or update page content (admin)
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PageContentInput"
+      responses:
+        '200':
+          description: Saved page content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageContent"
+
+  /admin/services:
+    post:
+      operationId: createService
+      tags: [admin]
+      summary: Create a service (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceInput"
+      responses:
+        '201':
+          description: Created service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /admin/services/{id}:
+    patch:
+      operationId: updateService
+      tags: [admin]
+      summary: Update a service (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceInput"
+      responses:
+        '200':
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    delete:
+      operationId: deleteService
+      tags: [admin]
+      summary: Delete a service (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Deleted
 
   /admin/delivery-zones:
     get:
@@ -1030,6 +1146,26 @@ components:
         order:
           type: integer
 
+    PageContent:
+      type: object
+      required: [slug, title, body]
+      properties:
+        slug:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+
+    PageContentInput:
+      type: object
+      required: [title, body]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+
     Service:
       type: object
       required: [id, title, description]
@@ -1042,6 +1178,17 @@ components:
           type: string
         icon:
           type: ["string", "null"]
+
+    ServiceInput:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
 
     AdminStats:
       type: object

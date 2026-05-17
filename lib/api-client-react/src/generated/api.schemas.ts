@@ -299,12 +299,29 @@ export interface FaqEntryUpdate {
   order?: number;
 }
 
+export interface PageContent {
+  slug: string;
+  title: string;
+  body: string;
+}
+
+export interface PageContentInput {
+  title: string;
+  body: string;
+}
+
 export interface Service {
   id: number;
   title: string;
   description: string;
   /** @nullable */
   icon?: string | null;
+}
+
+export interface ServiceInput {
+  title: string;
+  description: string;
+  icon?: string;
 }
 
 export interface AdminStats {

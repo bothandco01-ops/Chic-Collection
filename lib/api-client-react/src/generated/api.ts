@@ -37,11 +37,14 @@ import type {
   Order,
   OrderInput,
   OrderStatusUpdate,
+  PageContent,
+  PageContentInput,
   PaymentProofInput,
   Product,
   ProductInput,
   ProductUpdate,
   Service,
+  ServiceInput,
   SiteSettings,
   SiteSettingsUpdate
 } from './api.schemas';
@@ -1533,6 +1536,83 @@ export function useListServices<TData = Awaited<ReturnType<typeof listServices>>
 
 
 
+export const getGetPageContentUrl = (slug: string,) => {
+
+
+
+
+  return `/api/pages/${slug}`
+}
+
+/**
+ * @summary Get page content by slug
+ */
+export const getPageContent = async (slug: string, options?: RequestInit): Promise<PageContent> => {
+
+  return customFetch<PageContent>(getGetPageContentUrl(slug),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPageContentQueryKey = (slug: string,) => {
+    return [
+    `/api/pages/${slug}`
+    ] as const;
+    }
+
+
+export const getGetPageContentQueryOptions = <TData = Awaited<ReturnType<typeof getPageContent>>, TError = ErrorType<unknown>>(slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPageContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPageContentQueryKey(slug);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPageContent>>> = ({ signal }) => getPageContent(slug, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(slug), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPageContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPageContentQueryResult = NonNullable<Awaited<ReturnType<typeof getPageContent>>>
+export type GetPageContentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get page content by slug
+ */
+
+export function useGetPageContent<TData = Awaited<ReturnType<typeof getPageContent>>, TError = ErrorType<unknown>>(
+ slug: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPageContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPageContentQueryOptions(slug,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getGetAdminStatsUrl = () => {
 
 
@@ -2073,6 +2153,368 @@ export function useGetSiteSettings<TData = Awaited<ReturnType<typeof getSiteSett
 
 
 
+
+export const getListAdminContentUrl = () => {
+
+
+
+
+  return `/api/admin/content`
+}
+
+/**
+ * @summary List all page content entries (admin)
+ */
+export const listAdminContent = async ( options?: RequestInit): Promise<PageContent[]> => {
+
+  return customFetch<PageContent[]>(getListAdminContentUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAdminContentQueryKey = () => {
+    return [
+    `/api/admin/content`
+    ] as const;
+    }
+
+
+export const getListAdminContentQueryOptions = <TData = Awaited<ReturnType<typeof listAdminContent>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAdminContentQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminContent>>> = ({ signal }) => listAdminContent({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAdminContent>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAdminContentQueryResult = NonNullable<Awaited<ReturnType<typeof listAdminContent>>>
+export type ListAdminContentQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all page content entries (admin)
+ */
+
+export function useListAdminContent<TData = Awaited<ReturnType<typeof listAdminContent>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAdminContent>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAdminContentQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpsertPageContentUrl = (slug: string,) => {
+
+
+
+
+  return `/api/admin/content/${slug}`
+}
+
+/**
+ * @summary Create or update page content (admin)
+ */
+export const upsertPageContent = async (slug: string,
+    pageContentInput: PageContentInput, options?: RequestInit): Promise<PageContent> => {
+
+  return customFetch<PageContent>(getUpsertPageContentUrl(slug),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pageContentInput,)
+  }
+);}
+
+
+
+
+export const getUpsertPageContentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertPageContent>>, TError,{slug: string;data: BodyType<PageContentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof upsertPageContent>>, TError,{slug: string;data: BodyType<PageContentInput>}, TContext> => {
+
+const mutationKey = ['upsertPageContent'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof upsertPageContent>>, {slug: string;data: BodyType<PageContentInput>}> = (props) => {
+          const {slug,data} = props ?? {};
+
+          return  upsertPageContent(slug,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpsertPageContentMutationResult = NonNullable<Awaited<ReturnType<typeof upsertPageContent>>>
+    export type UpsertPageContentMutationBody = BodyType<PageContentInput>
+    export type UpsertPageContentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create or update page content (admin)
+ */
+export const useUpsertPageContent = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof upsertPageContent>>, TError,{slug: string;data: BodyType<PageContentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof upsertPageContent>>,
+        TError,
+        {slug: string;data: BodyType<PageContentInput>},
+        TContext
+      > => {
+      return useMutation(getUpsertPageContentMutationOptions(options));
+    }
+
+export const getCreateServiceUrl = () => {
+
+
+
+
+  return `/api/admin/services`
+}
+
+/**
+ * @summary Create a service (admin)
+ */
+export const createService = async (serviceInput: ServiceInput, options?: RequestInit): Promise<Service> => {
+
+  return customFetch<Service>(getCreateServiceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      serviceInput,)
+  }
+);}
+
+
+
+
+export const getCreateServiceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createService>>, TError,{data: BodyType<ServiceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createService>>, TError,{data: BodyType<ServiceInput>}, TContext> => {
+
+const mutationKey = ['createService'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createService>>, {data: BodyType<ServiceInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createService(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateServiceMutationResult = NonNullable<Awaited<ReturnType<typeof createService>>>
+    export type CreateServiceMutationBody = BodyType<ServiceInput>
+    export type CreateServiceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a service (admin)
+ */
+export const useCreateService = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createService>>, TError,{data: BodyType<ServiceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createService>>,
+        TError,
+        {data: BodyType<ServiceInput>},
+        TContext
+      > => {
+      return useMutation(getCreateServiceMutationOptions(options));
+    }
+
+export const getUpdateServiceUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/services/${id}`
+}
+
+/**
+ * @summary Update a service (admin)
+ */
+export const updateService = async (id: number,
+    serviceInput: ServiceInput, options?: RequestInit): Promise<Service> => {
+
+  return customFetch<Service>(getUpdateServiceUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      serviceInput,)
+  }
+);}
+
+
+
+
+export const getUpdateServiceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateService>>, TError,{id: number;data: BodyType<ServiceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateService>>, TError,{id: number;data: BodyType<ServiceInput>}, TContext> => {
+
+const mutationKey = ['updateService'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateService>>, {id: number;data: BodyType<ServiceInput>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateService(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateServiceMutationResult = NonNullable<Awaited<ReturnType<typeof updateService>>>
+    export type UpdateServiceMutationBody = BodyType<ServiceInput>
+    export type UpdateServiceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a service (admin)
+ */
+export const useUpdateService = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateService>>, TError,{id: number;data: BodyType<ServiceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateService>>,
+        TError,
+        {id: number;data: BodyType<ServiceInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateServiceMutationOptions(options));
+    }
+
+export const getDeleteServiceUrl = (id: number,) => {
+
+
+
+
+  return `/api/admin/services/${id}`
+}
+
+/**
+ * @summary Delete a service (admin)
+ */
+export const deleteService = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteServiceUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteServiceMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteService>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteService>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteService'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteService>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteService(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteServiceMutationResult = NonNullable<Awaited<ReturnType<typeof deleteService>>>
+
+    export type DeleteServiceMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a service (admin)
+ */
+export const useDeleteService = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteService>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteService>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteServiceMutationOptions(options));
+    }
 
 export const getListAdminDeliveryZonesUrl = () => {
 

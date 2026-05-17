@@ -422,6 +422,20 @@ export const ListServicesResponse = zod.array(ListServicesResponseItem)
 
 
 /**
+ * @summary Get page content by slug
+ */
+export const GetPageContentParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const GetPageContentResponse = zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "body": zod.string()
+})
+
+
+/**
  * @summary Get dashboard stats (admin)
  */
 export const GetAdminStatsResponse = zod.object({
@@ -649,6 +663,75 @@ export const GetSiteSettingsResponse = zod.object({
   "buttonRadius": zod.string(),
   "buttonStyle": zod.string(),
   "adminEmails": zod.string().optional()
+})
+
+
+/**
+ * @summary List all page content entries (admin)
+ */
+export const ListAdminContentResponseItem = zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "body": zod.string()
+})
+export const ListAdminContentResponse = zod.array(ListAdminContentResponseItem)
+
+
+/**
+ * @summary Create or update page content (admin)
+ */
+export const UpsertPageContentParams = zod.object({
+  "slug": zod.coerce.string()
+})
+
+export const UpsertPageContentBody = zod.object({
+  "title": zod.string(),
+  "body": zod.string()
+})
+
+export const UpsertPageContentResponse = zod.object({
+  "slug": zod.string(),
+  "title": zod.string(),
+  "body": zod.string()
+})
+
+
+/**
+ * @summary Create a service (admin)
+ */
+export const CreateServiceBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string(),
+  "icon": zod.string().optional()
+})
+
+
+/**
+ * @summary Update a service (admin)
+ */
+export const UpdateServiceParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateServiceBody = zod.object({
+  "title": zod.string(),
+  "description": zod.string(),
+  "icon": zod.string().optional()
+})
+
+export const UpdateServiceResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string(),
+  "icon": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a service (admin)
+ */
+export const DeleteServiceParams = zod.object({
+  "id": zod.coerce.number()
 })
 
 

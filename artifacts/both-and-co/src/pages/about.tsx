@@ -1,8 +1,36 @@
 import { Layout } from "@/components/layout";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useGetPageContent, getGetPageContentQueryKey } from "@workspace/api-client-react";
+
+const DEFAULT = {
+  headline: "Born from the Desire to Stand Out",
+  para1: "BOTH & CO. was founded with a singular vision: to bring editorial-quality luxury accessories to Nigerian women who refuse to settle for ordinary.",
+  para2: "We believe that a pair of perfectly crafted heels or an oversized pair of glasses is not just an accessory — it is a statement, a mood, an armour. Every piece in our collection is curated with obsessive attention to quality, silhouette, and the feeling it evokes.",
+  para3: "We are for the woman who walks into a room and changes its atmosphere. Who dresses for herself first, and the world second.",
+  value1Title: "Uncompromising Quality",
+  value1Text: "Every piece is hand-selected and inspected. We carry only what we would wear ourselves.",
+  value2Title: "Feminine Power",
+  value2Text: "We celebrate femininity in all its forms — sensual, strong, quiet, loud. There is no wrong way to be a woman.",
+  value3Title: "Nigerian Pride",
+  value3Text: "We are building something beautiful for Nigerian women, by people who understand and love this culture deeply.",
+};
 
 export default function About() {
+  const { data: page } = useGetPageContent("about", {
+    query: { queryKey: getGetPageContentQueryKey("about") },
+  });
+
+  const content = page?.body
+    ? (() => { try { return { ...DEFAULT, ...JSON.parse(page.body) }; } catch { return DEFAULT; } })()
+    : DEFAULT;
+
+  const values = [
+    { title: content.value1Title, text: content.value1Text },
+    { title: content.value2Title, text: content.value2Text },
+    { title: content.value3Title, text: content.value3Text },
+  ];
+
   return (
     <Layout>
       <section className="relative py-32 px-4 text-center overflow-hidden">
@@ -10,7 +38,7 @@ export default function About() {
         <div className="relative max-w-3xl mx-auto">
           <p className="text-xs tracking-[0.4em] uppercase text-primary mb-6">Our Story</p>
           <h1 className="font-serif italic text-5xl md:text-7xl mb-6 leading-tight">
-            Born from the<br />Desire to Stand Out
+            {content.headline}
           </h1>
           <div className="h-px w-16 bg-primary mx-auto" />
         </div>
@@ -33,15 +61,9 @@ export default function About() {
               Luxury crafted for<br />the bold, modern woman
             </h2>
             <div className="space-y-6 text-muted-foreground leading-relaxed">
-              <p>
-                BOTH & CO. was founded with a singular vision: to bring editorial-quality luxury accessories to Nigerian women who refuse to settle for ordinary.
-              </p>
-              <p>
-                We believe that a pair of perfectly crafted heels or an oversized pair of glasses is not just an accessory — it is a statement, a mood, an armour. Every piece in our collection is curated with obsessive attention to quality, silhouette, and the feeling it evokes.
-              </p>
-              <p>
-                We are for the woman who walks into a room and changes its atmosphere. Who dresses for herself first, and the world second.
-              </p>
+              {[content.para1, content.para2, content.para3].filter(Boolean).map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
             </div>
           </div>
         </div>
@@ -54,20 +76,7 @@ export default function About() {
             <h2 className="font-serif italic text-4xl">What We Stand For</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {[
-              {
-                title: "Uncompromising Quality",
-                text: "Every piece is hand-selected and inspected. We carry only what we would wear ourselves.",
-              },
-              {
-                title: "Feminine Power",
-                text: "We celebrate femininity in all its forms — sensual, strong, quiet, loud. There is no wrong way to be a woman.",
-              },
-              {
-                title: "Nigerian Pride",
-                text: "We are building something beautiful for Nigerian women, by people who understand and love this culture deeply.",
-              },
-            ].map((item) => (
+            {values.map((item) => (
               <div key={item.title} className="text-center">
                 <div className="h-px w-8 bg-primary mx-auto mb-8" />
                 <h3 className="font-serif text-xl mb-4">{item.title}</h3>
@@ -83,9 +92,7 @@ export default function About() {
           <h2 className="font-serif italic text-4xl mb-6">Ready to find your next statement piece?</h2>
           <p className="text-muted-foreground mb-10">Browse our curated collection of luxury heels and glasses.</p>
           <Link href="/shop">
-            <Button className="rounded-none px-12 py-5 tracking-widest uppercase text-xs">
-              Shop the Collection
-            </Button>
+            <Button className="rounded-none px-12 py-5 tracking-widest uppercase text-xs">Shop the Collection</Button>
           </Link>
         </div>
       </section>
