@@ -59,7 +59,7 @@ if (process.env.NODE_ENV === "production") {
   const repoRoot = path.resolve(__dirname, "../../..");
   const distPath = path.join(repoRoot, "artifacts/both-and-co/dist/public");
   app.use(express.static(distPath));
-  app.get("*", (_req, res) => {
+  app.get("/{*path}", (_req, res) => {
     res.sendFile(path.join(distPath, "index.html"));
   });
 }
