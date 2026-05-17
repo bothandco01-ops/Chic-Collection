@@ -1,9 +1,9 @@
 import { ReactNode, useState } from "react";
-import { Link } from "wouter";
-import { ShoppingBag, User, X, MessageCircle } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { ShoppingBag, User, X, MessageCircle, Menu, LogOut } from "lucide-react";
 import { useGetCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Show, useClerk } from "@clerk/react";
+import { Show, useClerk, useUser } from "@clerk/react";
 
 const WHATSAPP_NUMBER = "2348001234567";
 const WHATSAPP_MESSAGE = "Hello, I have a question about BOTH & CO.";
@@ -64,11 +64,93 @@ function WhatsAppWidget() {
   );
 }
 
+const NAV_LINKS = [
+  { href: "/shop", label: "Shop" },
+  { href: "/about", label: "About" },
+  { href: "/services", label: "Services" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/contact", label: "Contact" },
+];
+
+function MobileMenu({ onClose }: { onClose: () => void }) {
+  const { signOut } = useClerk();
+  const { user } = useUser();
+  const [location] = useLocation();
+
+  return (
+    <div className="fixed inset-0 z-[60] flex">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative ml-auto w-72 max-w-full h-full bg-background border-l border-border flex flex-col animate-in slide-in-from-right duration-200">
+        <div className="flex items-center justify-between px-6 h-16 border-b border-border">
+          <span className="font-serif italic font-bold text-lg tracking-wider">BOTH & CO.</span>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 overflow-y-auto py-8 px-6 space-y-1">
+          {NAV_LINKS.map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={onClose}
+              className={`block py-3 text-sm tracking-widest uppercase border-b border-border/40 transition-colors ${
+                location === href ? "text-primary" : "text-foreground hover:text-primary"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+
+          <div className="pt-6 space-y-3">
+            {user ? (
+              <>
+                <Link href="/account" onClick={onClose} className="flex items-center gap-3 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <User className="h-4 w-4" />
+                  My Account
+                </Link>
+                <Link href="/orders" onClick={onClose} className="flex items-center gap-3 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <ShoppingBag className="h-4 w-4" />
+                  My Orders
+                </Link>
+                <button
+                  onClick={() => { signOut({ redirectUrl: "/" }); onClose(); }}
+                  className="flex items-center gap-3 py-3 text-sm text-muted-foreground hover:text-destructive transition-colors w-full text-left"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/sign-in"
+                  onClick={onClose}
+                  className="block w-full border border-border py-3 text-xs tracking-widest uppercase text-center hover:border-primary hover:text-primary transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/sign-up"
+                  onClick={onClose}
+                  className="block w-full bg-primary text-primary-foreground py-3 text-xs tracking-widest uppercase text-center hover:bg-primary/90 transition-colors"
+                >
+                  Create Account
+                </Link>
+              </>
+            )}
+          </div>
+        </nav>
+      </div>
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: ReactNode }) {
   const { data: cartItems } = useGetCart({ query: { queryKey: getGetCartQueryKey() } });
   const cartCount = cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
-  
   const { signOut } = useClerk();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -79,31 +161,37 @@ export function Layout({ children }: { children: ReactNode }) {
               <span className="font-serif italic font-bold text-xl tracking-wider">BOTH & CO.</span>
             </Link>
             <nav className="hidden md:flex gap-6">
-              <Link href="/shop" className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Shop</Link>
-              <Link href="/about" className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">About</Link>
-              <Link href="/services" className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Services</Link>
-              <Link href="/faq" className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">FAQ</Link>
-              <Link href="/contact" className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Contact</Link>
+              {NAV_LINKS.map(({ href, label }) => (
+                <Link key={href} href={href} className="flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                  {label}
+                </Link>
+              ))}
             </nav>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-2 md:gap-4">
             <Show when="signed-in">
-              <Link href="/account">
+              <Link href="/account" className="hidden md:flex">
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <User className="h-5 w-5" />
                   <span className="sr-only">Account</span>
                 </Button>
               </Link>
-              <Button variant="ghost" className="hidden md:inline-flex" onClick={() => signOut({ redirectUrl: "/" })}>
-                Log out
+              <Button variant="ghost" className="hidden md:inline-flex text-sm" onClick={() => signOut({ redirectUrl: "/" })}>
+                Sign Out
               </Button>
             </Show>
             <Show when="signed-out">
               <Link href="/sign-in" className="hidden md:inline-flex text-sm font-medium transition-colors hover:text-primary">
                 Sign In
               </Link>
+              <Link href="/sign-up" className="hidden md:inline-flex">
+                <span className="border border-primary text-primary px-4 py-1.5 text-xs tracking-widest uppercase hover:bg-primary hover:text-primary-foreground transition-colors">
+                  Create Account
+                </span>
+              </Link>
             </Show>
-            
+
             <Link href="/cart">
               <Button variant="ghost" size="icon" className="relative rounded-full">
                 <ShoppingBag className="h-5 w-5" />
@@ -115,10 +203,20 @@ export function Layout({ children }: { children: ReactNode }) {
                 <span className="sr-only">Cart</span>
               </Button>
             </Link>
+
+            <button
+              className="md:hidden text-muted-foreground hover:text-foreground transition-colors p-1"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
           </div>
         </div>
       </header>
-      
+
+      {mobileMenuOpen && <MobileMenu onClose={() => setMobileMenuOpen(false)} />}
+
       <main className="flex-1 flex flex-col">
         {children}
       </main>

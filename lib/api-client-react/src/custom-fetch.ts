@@ -349,6 +349,14 @@ export async function customFetch<T = unknown>(
     headers.set("accept", DEFAULT_JSON_ACCEPT);
   }
 
+  // Attach cart session ID from localStorage for session-based cart API calls.
+  if (typeof localStorage !== "undefined" && !headers.has("x-session-id")) {
+    const sessionId = localStorage.getItem("cartSessionId");
+    if (sessionId) {
+      headers.set("x-session-id", sessionId);
+    }
+  }
+
   // Attach bearer token when an auth getter is configured and no
   // Authorization header has been explicitly provided.
   if (_authTokenGetter && !headers.has("authorization")) {
