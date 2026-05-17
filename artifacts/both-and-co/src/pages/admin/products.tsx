@@ -12,7 +12,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Layout } from "@/components/layout";
+import { AdminShell } from "@/components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +30,7 @@ const productSchema = z.object({
   price: z.number({ coerce: true }).min(1, "Price required"),
   category: z.enum(["heels", "glasses"]),
   imageUrl: z.string().optional(),
+  imageUrls: z.array(z.string()).optional(),
   inStock: z.boolean().optional(),
   featured: z.boolean().optional(),
   sizes: z.string().optional(),
@@ -154,6 +155,72 @@ function ImageUploader({
   );
 }
 
+function ExtraImagesEditor({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [urlInput, setUrlInput] = useState("");
+
+  const addUrl = (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    onChange([...value, trimmed]);
+    setUrlInput("");
+  };
+
+  const handleFiles = (files: FileList | null) => {
+    if (!files) return;
+    const readers = Array.from(files).filter((f) => f.type.startsWith("image/")).map((f) =>
+      new Promise<string>((resolve) => {
+        const r = new FileReader();
+        r.onloadend = () => resolve(r.result as string);
+        r.readAsDataURL(f);
+      })
+    );
+    Promise.all(readers).then((results) => onChange([...value, ...results]));
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-4 gap-2">
+        {value.map((src, i) => (
+          <div key={i} className="relative aspect-square border border-border overflow-hidden group" data-testid={`extra-image-${i}`}>
+            <img src={src} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
+            <button
+              type="button"
+              onClick={() => onChange(value.filter((_, idx) => idx !== i))}
+              className="absolute top-1 right-1 w-6 h-6 bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="aspect-square border-2 border-dashed border-border hover:border-primary flex flex-col items-center justify-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+          data-testid="button-add-extra-images"
+        >
+          <Plus className="h-5 w-5" />
+          <span className="text-[10px] tracking-widest uppercase">Add</span>
+        </button>
+      </div>
+      <input ref={fileRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={urlInput}
+          onChange={(e) => setUrlInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(urlInput); } }}
+          placeholder="Or paste image URL"
+          className="flex-1 bg-background border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
+        />
+        <button type="button" onClick={() => addUrl(urlInput)} className="bg-muted hover:bg-primary hover:text-primary-foreground px-4 text-xs tracking-widest uppercase transition-colors">
+          Add
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminProducts() {
   const { user, isLoaded } = useUser();
   const isAdmin = isUserAdmin(user);
@@ -175,13 +242,13 @@ export default function AdminProducts() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "", description: "", price: 0, category: "heels",
-      imageUrl: "", inStock: true, featured: false, sizes: "",
+      imageUrl: "", imageUrls: [], inStock: true, featured: false, sizes: "",
     },
   });
 
   const openCreate = () => {
     setEditing(null);
-    form.reset({ name: "", description: "", price: 0, category: "heels", imageUrl: "", inStock: true, featured: false, sizes: "" });
+    form.reset({ name: "", description: "", price: 0, category: "heels", imageUrl: "", imageUrls: [], inStock: true, featured: false, sizes: "" });
     setShowForm(true);
   };
 
@@ -193,6 +260,7 @@ export default function AdminProducts() {
       price: product.price,
       category: product.category as "heels" | "glasses",
       imageUrl: product.imageUrl || "",
+      imageUrls: product.imageUrls || [],
       inStock: product.inStock,
       featured: product.featured,
       sizes: product.sizes || "",
@@ -207,6 +275,7 @@ export default function AdminProducts() {
       price: Number(data.price),
       category: data.category,
       imageUrl: data.imageUrl,
+      imageUrls: (data.imageUrls || []).filter(Boolean),
       inStock: data.inStock ?? true,
       featured: data.featured ?? false,
       sizes: data.sizes,
@@ -243,14 +312,14 @@ export default function AdminProducts() {
   };
 
   if (!isLoaded) {
-    return <Layout><div className="max-w-6xl mx-auto px-4 py-16"><Skeleton className="h-10 w-48 mb-10" /></div></Layout>;
+    return <AdminShell><div className="max-w-6xl mx-auto px-4 py-16"><Skeleton className="h-10 w-48 mb-10" /></div></AdminShell>;
   }
 
   if (!isSignedIn) return <Redirect to="/sign-in" />;
 
   if (!isAdmin) {
     return (
-      <Layout>
+      <AdminShell>
         <div className="max-w-lg mx-auto px-4 py-32 text-center">
           <div className="bg-card border border-border p-10">
             <h2 className="font-serif italic text-3xl mb-4">Admin Access Required</h2>
@@ -260,12 +329,12 @@ export default function AdminProducts() {
             <Link href="/"><Button variant="outline" className="rounded-none border-border">Return Home</Button></Link>
           </div>
         </div>
-      </Layout>
+      </AdminShell>
     );
   }
 
   return (
-    <Layout>
+    <AdminShell>
       {showForm && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center p-4 overflow-y-auto">
           <div className="bg-card border border-border w-full max-w-lg p-8 relative my-8">
@@ -318,9 +387,19 @@ export default function AdminProducts() {
 
                 <FormField control={form.control} name="imageUrl" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Product Image</FormLabel>
+                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Main Image</FormLabel>
                     <FormControl>
                       <ImageUploader value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+
+                <FormField control={form.control} name="imageUrls" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs tracking-widest uppercase text-muted-foreground">Additional Images (Gallery)</FormLabel>
+                    <FormControl>
+                      <ExtraImagesEditor value={field.value || []} onChange={field.onChange} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -479,6 +558,6 @@ export default function AdminProducts() {
           </div>
         )}
       </div>
-    </Layout>
+    </AdminShell>
   );
 }

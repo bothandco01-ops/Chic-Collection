@@ -1,6 +1,6 @@
 import { useGetAdminStats, getGetAdminStatsQueryKey } from "@workspace/api-client-react";
 import { Link, Redirect } from "wouter";
-import { Layout } from "@/components/layout";
+import { AdminShell } from "@/components/admin-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/react";
 import { ShoppingBag, Package, CheckCircle, TrendingUp, Clock, ChevronRight, Info } from "lucide-react";
@@ -26,14 +26,14 @@ export default function AdminDashboard() {
 
   if (!isLoaded) {
     return (
-      <Layout>
+      <AdminShell>
         <div className="max-w-6xl mx-auto px-4 py-16">
           <Skeleton className="h-10 w-48 mb-10" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28" />)}
           </div>
         </div>
-      </Layout>
+      </AdminShell>
     );
   }
 
@@ -41,7 +41,7 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
     return (
-      <Layout>
+      <AdminShell>
         <div className="max-w-xl mx-auto px-4 py-32">
           <div className="bg-card border border-border p-10">
             <div className="flex items-start gap-4 mb-6">
@@ -93,12 +93,12 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-      </Layout>
+      </AdminShell>
     );
   }
 
   return (
-    <Layout>
+    <AdminShell>
       <div className="max-w-6xl mx-auto px-4 py-16">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
           <div>
@@ -195,6 +195,6 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
-    </Layout>
+    </AdminShell>
   );
 }

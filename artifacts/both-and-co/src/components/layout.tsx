@@ -4,13 +4,14 @@ import { ShoppingBag, User, X, MessageCircle, Menu, LogOut } from "lucide-react"
 import { useGetCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Show, useClerk, useUser } from "@clerk/react";
+import { useSiteSettings } from "@/lib/settings";
 
-const WHATSAPP_NUMBER = "2348001234567";
 const WHATSAPP_MESSAGE = "Hello, I have a question about BOTH & CO.";
 
 function WhatsAppWidget() {
   const [open, setOpen] = useState(false);
-  const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+  const settings = useSiteSettings();
+  const waUrl = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">

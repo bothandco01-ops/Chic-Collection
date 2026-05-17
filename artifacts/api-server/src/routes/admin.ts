@@ -1,6 +1,8 @@
 import { Router } from "express";
-import { eq, count, sum } from "drizzle-orm";
-import { db, ordersTable, orderItemsTable, productsTable } from "@workspace/db";
+import { eq, count, sum, desc } from "drizzle-orm";
+import { db, ordersTable, orderItemsTable, productsTable, siteSettingsTable } from "@workspace/db";
+import { serialize } from "./products.js";
+import { getOrCreateSettings } from "./site-settings";
 import { getAuth, clerkClient } from "@clerk/express";
 
 const router = Router();
@@ -10,19 +12,39 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
+async function getDbAdminEmails(): Promise<string[]> {
+  try {
+    const settings = await getOrCreateSettings();
+    return (settings.adminEmails || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export async function isRequesterAdmin(req: any): Promise<boolean> {
+  const auth = getAuth(req);
+  if (!auth?.userId) return false;
+  try {
+    const user = await clerkClient.users.getUser(auth.userId);
+    if (user.publicMetadata?.role === "admin") return true;
+    const emails = user.emailAddresses.map((e) => e.emailAddress.toLowerCase());
+    const dbAdmins = await getDbAdminEmails();
+    const allowed = new Set([...ADMIN_EMAILS, ...dbAdmins]);
+    return emails.some((e) => allowed.has(e));
+  } catch {
+    return false;
+  }
+}
+
 async function requireAdmin(req: any, res: any, next: any) {
   const auth = getAuth(req);
   if (!auth?.userId) return res.status(401).json({ error: "Unauthorized" });
-  try {
-    const user = await clerkClient.users.getUser(auth.userId);
-    if (user.publicMetadata?.role === "admin") return next();
-    const emails = user.emailAddresses.map((e) => e.emailAddress.toLowerCase());
-    if (emails.some((e) => ADMIN_EMAILS.includes(e))) return next();
-    return res.status(403).json({ error: "Forbidden" });
-  } catch (err) {
-    req.log.error(err);
-    return res.status(500).json({ error: "Failed to verify admin" });
-  }
+  const ok = await isRequesterAdmin(req);
+  if (ok) return next();
+  return res.status(403).json({ error: "Forbidden" });
 }
 
 const requireAuth = requireAdmin;
@@ -113,10 +135,55 @@ router.patch("/orders/:id/status", requireAuth, async (req, res): Promise<void> 
 router.get("/products", requireAuth, async (req, res) => {
   try {
     const products = await db.select().from(productsTable);
-    res.json(products);
+    res.json(products.map(serialize));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to fetch products" });
+  }
+});
+
+router.get("/customers", requireAuth, async (req, res) => {
+  try {
+    const orders = await db.select().from(ordersTable).orderBy(desc(ordersTable.createdAt));
+    const map = new Map<string, { email: string; name: string | null; phone: string | null; totalOrders: number; totalSpent: number; lastOrderDate: string | null }>();
+    for (const o of orders) {
+      const key = (o.guestEmail || "").toLowerCase();
+      if (!key) continue;
+      const existing = map.get(key);
+      if (existing) {
+        existing.totalOrders += 1;
+        existing.totalSpent += Number(o.totalAmount) || 0;
+      } else {
+        map.set(key, {
+          email: o.guestEmail || "",
+          name: o.guestName || null,
+          phone: o.phone || null,
+          totalOrders: 1,
+          totalSpent: Number(o.totalAmount) || 0,
+          lastOrderDate: o.createdAt ? new Date(o.createdAt).toISOString() : null,
+        });
+      }
+    }
+    res.json(Array.from(map.values()).sort((a, b) => b.totalSpent - a.totalSpent));
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to fetch customers" });
+  }
+});
+
+router.patch("/site-settings", requireAuth, async (req, res): Promise<void> => {
+  try {
+    const current = await getOrCreateSettings();
+    const updates: Record<string, unknown> = {};
+    const allowed = ["bankName", "accountName", "accountNumber", "whatsappNumber", "heroTitle", "heroSubtitle", "heroImageUrl", "adminEmails"];
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
+    const [updated] = await db.update(siteSettingsTable).set(updates).where(eq(siteSettingsTable.id, current.id)).returning();
+    res.json(updated);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to update settings" });
   }
 });
 

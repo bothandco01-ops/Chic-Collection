@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   useGetProduct, 
@@ -28,8 +28,19 @@ export default function ProductDetail() {
   
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [activeImage, setActiveImage] = useState(0);
 
   const availableSizes = product?.sizes ? product.sizes.split(",").map(s => s.trim()) : [];
+
+  const gallery = useMemo(() => {
+    if (!product) return [] as string[];
+    const fallback = product.category === "heels" ? "/placeholder-heels.png" : "/placeholder-glasses.png";
+    const set = new Set<string>();
+    if (product.imageUrl) set.add(product.imageUrl);
+    (product.imageUrls || []).forEach((u) => { if (u) set.add(u); });
+    const arr = Array.from(set);
+    return arr.length > 0 ? arr : [fallback];
+  }, [product]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -93,15 +104,30 @@ export default function ProductDetail() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 py-12 flex flex-col md:flex-row gap-12 lg:gap-24">
-        {/* Product Image */}
+        {/* Product Image Gallery */}
         <div className="w-full md:w-1/2">
-          <div className="aspect-[3/4] overflow-hidden bg-card">
-            <img 
-              src={product.imageUrl || (product.category === 'heels' ? '/placeholder-heels.png' : '/placeholder-glasses.png')} 
+          <div className="aspect-[3/4] overflow-hidden bg-card mb-3">
+            <img
+              src={gallery[activeImage] || gallery[0]}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-opacity duration-300"
+              data-testid="product-main-image"
             />
           </div>
+          {gallery.length > 1 && (
+            <div className="grid grid-cols-5 gap-2" data-testid="product-thumbnails">
+              {gallery.map((src, i) => (
+                <button
+                  key={src + i}
+                  onClick={() => setActiveImage(i)}
+                  className={`aspect-square overflow-hidden bg-card border transition-colors ${i === activeImage ? "border-primary" : "border-border hover:border-primary/50"}`}
+                  data-testid={`product-thumb-${i}`}
+                >
+                  <img src={src} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Product Info */}

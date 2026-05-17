@@ -8,8 +8,10 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Layout } from "@/components/layout";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSiteSettings } from "@/lib/settings";
 
 export default function Home() {
+  const settings = useSiteSettings();
   const { data: featuredProducts, isLoading } = useListProducts(
     { featured: "true" }, 
     { query: { queryKey: getListProductsQueryKey({ featured: "true" }) } }
@@ -21,7 +23,7 @@ export default function Home() {
       <section className="relative h-[80vh] min-h-[600px] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
-            src="/placeholder-heels.png" 
+            src={settings.heroImageUrl || "/placeholder-heels.png"} 
             alt="Luxury Heels" 
             className="w-full h-full object-cover opacity-50"
           />
@@ -30,10 +32,10 @@ export default function Home() {
         
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto mt-20">
           <h1 className="font-serif italic text-5xl md:text-7xl lg:text-8xl tracking-wider text-foreground mb-6 drop-shadow-lg">
-            Elevated. Sensual. Unapologetic.
+            {settings.heroTitle}
           </h1>
           <p className="text-lg md:text-xl text-foreground/80 mb-10 max-w-2xl mx-auto font-light tracking-wide">
-            Luxury Nigerian womenswear accessories crafted for the stylish, confident woman.
+            {settings.heroSubtitle}
           </p>
           <Link href="/shop">
             <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-none px-12 py-6 text-sm tracking-[0.2em] uppercase transition-all duration-300">

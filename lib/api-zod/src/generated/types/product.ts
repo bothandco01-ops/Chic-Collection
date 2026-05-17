@@ -16,6 +16,7 @@ export interface Product {
   category: ProductCategory;
   /** @nullable */
   imageUrl?: string | null;
+  imageUrls?: string[];
   inStock: boolean;
   featured?: boolean;
   /** @nullable */

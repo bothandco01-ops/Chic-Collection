@@ -6,7 +6,7 @@ import {
   useUpdateOrderStatus,
   OrderStatusUpdateStatus,
 } from "@workspace/api-client-react";
-import { Layout } from "@/components/layout";
+import { AdminShell } from "@/components/admin-layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/react";
@@ -63,12 +63,12 @@ export default function AdminOrders() {
 
   if (!isLoaded) {
     return (
-      <Layout>
+      <AdminShell>
         <div className="max-w-6xl mx-auto px-4 py-16">
           <Skeleton className="h-10 w-48 mb-10" />
           <Skeleton className="h-64 w-full" />
         </div>
-      </Layout>
+      </AdminShell>
     );
   }
 
@@ -76,17 +76,17 @@ export default function AdminOrders() {
 
   if (!isAdmin) {
     return (
-      <Layout>
+      <AdminShell>
         <div className="max-w-lg mx-auto px-4 py-32 text-center">
           <h2 className="font-serif italic text-3xl mb-4">Access Denied</h2>
           <Link href="/"><Button className="rounded-none">Return Home</Button></Link>
         </div>
-      </Layout>
+      </AdminShell>
     );
   }
 
   return (
-    <Layout>
+    <AdminShell>
       {viewingProof && (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setViewingProof(null)}>
           <button className="absolute top-6 right-6 text-white hover:text-primary" onClick={() => setViewingProof(null)}>
@@ -203,6 +203,6 @@ export default function AdminOrders() {
           </div>
         )}
       </div>
-    </Layout>
+    </AdminShell>
   );
 }

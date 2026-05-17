@@ -21,6 +21,7 @@ import { getSessionId } from "@/lib/session";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@clerk/react";
 import { Copy, CheckCircle, Upload } from "lucide-react";
+import { useSiteSettings } from "@/lib/settings";
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Name is required"),
@@ -38,6 +39,7 @@ export default function Checkout() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { user } = useUser();
+  const settings = useSiteSettings();
 
   const [orderId, setOrderId] = useState<number | null>(null);
   const [proofFile, setProofFile] = useState<string | null>(null);
@@ -170,9 +172,9 @@ export default function Checkout() {
             <h3 className="font-serif text-xl mb-6">Bank Transfer Details</h3>
             <div className="space-y-4">
               {[
-                { label: "Bank Name", value: "First Bank Nigeria" },
-                { label: "Account Name", value: "BOTH & CO. LIMITED" },
-                { label: "Account Number", value: "3012345678" },
+                { label: "Bank Name", value: settings.bankName },
+                { label: "Account Name", value: settings.accountName },
+                { label: "Account Number", value: settings.accountNumber },
                 { label: "Amount", value: `₦${totalAmount.toLocaleString()}` },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between items-center py-3 border-b border-border last:border-0">

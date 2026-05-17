@@ -13,6 +13,7 @@ export interface ProductUpdate {
   price?: number;
   category?: ProductUpdateCategory;
   imageUrl?: string;
+  imageUrls?: string[];
   inStock?: boolean;
   featured?: boolean;
   sizes?: string;

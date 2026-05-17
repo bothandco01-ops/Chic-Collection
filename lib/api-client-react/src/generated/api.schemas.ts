@@ -26,6 +26,7 @@ export interface Product {
   category: ProductCategory;
   /** @nullable */
   imageUrl?: string | null;
+  imageUrls?: string[];
   inStock: boolean;
   featured?: boolean;
   /** @nullable */
@@ -47,6 +48,7 @@ export interface ProductInput {
   price: number;
   category: ProductInputCategory;
   imageUrl?: string;
+  imageUrls?: string[];
   inStock?: boolean;
   featured?: boolean;
   sizes?: string;
@@ -66,9 +68,45 @@ export interface ProductUpdate {
   price?: number;
   category?: ProductUpdateCategory;
   imageUrl?: string;
+  imageUrls?: string[];
   inStock?: boolean;
   featured?: boolean;
   sizes?: string;
+}
+
+export interface Customer {
+  email: string;
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  totalOrders: number;
+  totalSpent: number;
+  /** @nullable */
+  lastOrderDate?: string | null;
+}
+
+export interface SiteSettings {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  whatsappNumber: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  /** @nullable */
+  heroImageUrl?: string | null;
+  adminEmails?: string;
+}
+
+export interface SiteSettingsUpdate {
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+  whatsappNumber?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroImageUrl?: string;
+  adminEmails?: string;
 }
 
 export interface CartItem {

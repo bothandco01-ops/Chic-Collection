@@ -31,6 +31,7 @@ export const ListProductsResponseItem = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -48,6 +49,7 @@ export const CreateProductBody = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().optional(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean().optional(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().optional()
@@ -68,6 +70,7 @@ export const GetProductResponse = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -88,6 +91,7 @@ export const UpdateProductBody = zod.object({
   "price": zod.number().optional(),
   "category": zod.enum(['heels', 'glasses']).optional(),
   "imageUrl": zod.string().optional(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean().optional(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().optional()
@@ -100,6 +104,7 @@ export const UpdateProductResponse = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -131,6 +136,7 @@ export const GetCartResponseItem = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -175,6 +181,7 @@ export const UpdateCartItemResponse = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -220,6 +227,7 @@ export const ListOrdersResponseItem = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -283,6 +291,7 @@ export const GetOrderResponse = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -329,6 +338,7 @@ export const SubmitPaymentProofResponse = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -436,6 +446,7 @@ export const GetAdminStatsResponse = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -479,6 +490,7 @@ export const ListAdminOrdersResponseItem = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -526,6 +538,7 @@ export const UpdateOrderStatusResponse = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
@@ -545,11 +558,67 @@ export const ListAdminProductsResponseItem = zod.object({
   "price": zod.number(),
   "category": zod.enum(['heels', 'glasses']),
   "imageUrl": zod.string().nullish(),
+  "imageUrls": zod.array(zod.string()).optional(),
   "inStock": zod.boolean(),
   "featured": zod.boolean().optional(),
   "sizes": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const ListAdminProductsResponse = zod.array(ListAdminProductsResponseItem)
+
+
+/**
+ * @summary List unique customers derived from orders (admin)
+ */
+export const ListAdminCustomersResponseItem = zod.object({
+  "email": zod.string(),
+  "name": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "totalOrders": zod.number(),
+  "totalSpent": zod.number(),
+  "lastOrderDate": zod.string().nullish()
+})
+export const ListAdminCustomersResponse = zod.array(ListAdminCustomersResponseItem)
+
+
+/**
+ * @summary Get public site settings
+ */
+export const GetSiteSettingsResponse = zod.object({
+  "bankName": zod.string(),
+  "accountName": zod.string(),
+  "accountNumber": zod.string(),
+  "whatsappNumber": zod.string(),
+  "heroTitle": zod.string(),
+  "heroSubtitle": zod.string(),
+  "heroImageUrl": zod.string().nullish(),
+  "adminEmails": zod.string().optional()
+})
+
+
+/**
+ * @summary Update site settings (admin)
+ */
+export const UpdateSiteSettingsBody = zod.object({
+  "bankName": zod.string().optional(),
+  "accountName": zod.string().optional(),
+  "accountNumber": zod.string().optional(),
+  "whatsappNumber": zod.string().optional(),
+  "heroTitle": zod.string().optional(),
+  "heroSubtitle": zod.string().optional(),
+  "heroImageUrl": zod.string().optional(),
+  "adminEmails": zod.string().optional()
+})
+
+export const UpdateSiteSettingsResponse = zod.object({
+  "bankName": zod.string(),
+  "accountName": zod.string(),
+  "accountNumber": zod.string(),
+  "whatsappNumber": zod.string(),
+  "heroTitle": zod.string(),
+  "heroSubtitle": zod.string(),
+  "heroImageUrl": zod.string().nullish(),
+  "adminEmails": zod.string().optional()
+})
 
 

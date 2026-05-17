@@ -13,6 +13,7 @@ export interface ProductInput {
   price: number;
   category: ProductInputCategory;
   imageUrl?: string;
+  imageUrls?: string[];
   inStock?: boolean;
   featured?: boolean;
   sizes?: string;

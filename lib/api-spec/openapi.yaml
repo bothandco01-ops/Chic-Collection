@@ -19,6 +19,8 @@ tags:
     description: FAQ entries
   - name: services
     description: Services offered
+  - name: settings
+    description: Site settings
   - name: admin
     description: Admin operations
 paths:
@@ -444,6 +446,53 @@ paths:
                 items:
                   $ref: "#/components/schemas/Product"
 
+  /admin/customers:
+    get:
+      operationId: listAdminCustomers
+      tags: [admin]
+      summary: List unique customers derived from orders (admin)
+      responses:
+        "200":
+          description: Customers list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Customer"
+
+  /site-settings:
+    get:
+      operationId: getSiteSettings
+      tags: [settings]
+      summary: Get public site settings
+      responses:
+        "200":
+          description: Site settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+
+  /admin/site-settings:
+    patch:
+      operationId: updateSiteSettings
+      tags: [admin]
+      summary: Update site settings (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteSettingsUpdate"
+      responses:
+        "200":
+          description: Updated site settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+
 components:
   schemas:
     HealthStatus:
@@ -471,6 +520,10 @@ components:
           enum: [heels, glasses]
         imageUrl:
           type: ["string", "null"]
+        imageUrls:
+          type: array
+          items:
+            type: string
         inStock:
           type: boolean
         featured:
@@ -495,6 +548,10 @@ components:
           enum: [heels, glasses]
         imageUrl:
           type: string
+        imageUrls:
+          type: array
+          items:
+            type: string
         inStock:
           type: boolean
         featured:
@@ -516,11 +573,73 @@ components:
           enum: [heels, glasses]
         imageUrl:
           type: string
+        imageUrls:
+          type: array
+          items:
+            type: string
         inStock:
           type: boolean
         featured:
           type: boolean
         sizes:
+          type: string
+
+    Customer:
+      type: object
+      required: [email, totalOrders, totalSpent]
+      properties:
+        email:
+          type: string
+        name:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        totalOrders:
+          type: integer
+        totalSpent:
+          type: number
+        lastOrderDate:
+          type: ["string", "null"]
+
+    SiteSettings:
+      type: object
+      required: [bankName, accountName, accountNumber, whatsappNumber, heroTitle, heroSubtitle]
+      properties:
+        bankName:
+          type: string
+        accountName:
+          type: string
+        accountNumber:
+          type: string
+        whatsappNumber:
+          type: string
+        heroTitle:
+          type: string
+        heroSubtitle:
+          type: string
+        heroImageUrl:
+          type: ["string", "null"]
+        adminEmails:
+          type: string
+
+    SiteSettingsUpdate:
+      type: object
+      properties:
+        bankName:
+          type: string
+        accountName:
+          type: string
+        accountNumber:
+          type: string
+        whatsappNumber:
+          type: string
+        heroTitle:
+          type: string
+        heroSubtitle:
+          type: string
+        heroImageUrl:
+          type: string
+        adminEmails:
           type: string
 
     CartItem:
