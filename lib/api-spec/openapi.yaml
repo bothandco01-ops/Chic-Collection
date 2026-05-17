@@ -601,9 +601,36 @@ components:
         lastOrderDate:
           type: ["string", "null"]
 
+    HeroBanner:
+      type: object
+      required: [title, subtitle, imageUrl, ctaText, ctaLink]
+      properties:
+        title:
+          type: string
+        subtitle:
+          type: string
+        imageUrl:
+          type: string
+        ctaText:
+          type: string
+        ctaLink:
+          type: string
+
+    SectionsConfig:
+      type: object
+      properties:
+        featuredProducts:
+          type: boolean
+        categoriesShowcase:
+          type: boolean
+        brandStory:
+          type: boolean
+        whatsappWidget:
+          type: boolean
+
     SiteSettings:
       type: object
-      required: [bankName, accountName, accountNumber, whatsappNumber, heroTitle, heroSubtitle]
+      required: [bankName, accountName, accountNumber, whatsappNumber, heroTitle, heroSubtitle, primaryColor, backgroundColor, cardColor, foregroundColor, accentColor, mutedColor, borderColor, serifFont, sansFont, buttonRadius, buttonStyle]
       properties:
         bankName:
           type: string
@@ -619,6 +646,38 @@ components:
           type: string
         heroImageUrl:
           type: ["string", "null"]
+        heroBanners:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeroBanner"
+        sectionsConfig:
+          $ref: "#/components/schemas/SectionsConfig"
+        featuredProductIds:
+          type: array
+          items:
+            type: integer
+        primaryColor:
+          type: string
+        backgroundColor:
+          type: string
+        cardColor:
+          type: string
+        foregroundColor:
+          type: string
+        accentColor:
+          type: string
+        mutedColor:
+          type: string
+        borderColor:
+          type: string
+        serifFont:
+          type: string
+        sansFont:
+          type: string
+        buttonRadius:
+          type: string
+        buttonStyle:
+          type: string
         adminEmails:
           type: string
 
@@ -638,6 +697,38 @@ components:
         heroSubtitle:
           type: string
         heroImageUrl:
+          type: string
+        heroBanners:
+          type: array
+          items:
+            $ref: "#/components/schemas/HeroBanner"
+        sectionsConfig:
+          $ref: "#/components/schemas/SectionsConfig"
+        featuredProductIds:
+          type: array
+          items:
+            type: integer
+        primaryColor:
+          type: string
+        backgroundColor:
+          type: string
+        cardColor:
+          type: string
+        foregroundColor:
+          type: string
+        accentColor:
+          type: string
+        mutedColor:
+          type: string
+        borderColor:
+          type: string
+        serifFont:
+          type: string
+        sansFont:
+          type: string
+        buttonRadius:
+          type: string
+        buttonStyle:
           type: string
         adminEmails:
           type: string

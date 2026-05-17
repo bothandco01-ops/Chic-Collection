@@ -592,6 +592,31 @@ export const GetSiteSettingsResponse = zod.object({
   "heroTitle": zod.string(),
   "heroSubtitle": zod.string(),
   "heroImageUrl": zod.string().nullish(),
+  "heroBanners": zod.array(zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string(),
+  "imageUrl": zod.string(),
+  "ctaText": zod.string(),
+  "ctaLink": zod.string()
+})).optional(),
+  "sectionsConfig": zod.object({
+  "featuredProducts": zod.boolean().optional(),
+  "categoriesShowcase": zod.boolean().optional(),
+  "brandStory": zod.boolean().optional(),
+  "whatsappWidget": zod.boolean().optional()
+}).optional(),
+  "featuredProductIds": zod.array(zod.number()).optional(),
+  "primaryColor": zod.string(),
+  "backgroundColor": zod.string(),
+  "cardColor": zod.string(),
+  "foregroundColor": zod.string(),
+  "accentColor": zod.string(),
+  "mutedColor": zod.string(),
+  "borderColor": zod.string(),
+  "serifFont": zod.string(),
+  "sansFont": zod.string(),
+  "buttonRadius": zod.string(),
+  "buttonStyle": zod.string(),
   "adminEmails": zod.string().optional()
 })
 
@@ -607,6 +632,31 @@ export const UpdateSiteSettingsBody = zod.object({
   "heroTitle": zod.string().optional(),
   "heroSubtitle": zod.string().optional(),
   "heroImageUrl": zod.string().optional(),
+  "heroBanners": zod.array(zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string(),
+  "imageUrl": zod.string(),
+  "ctaText": zod.string(),
+  "ctaLink": zod.string()
+})).optional(),
+  "sectionsConfig": zod.object({
+  "featuredProducts": zod.boolean().optional(),
+  "categoriesShowcase": zod.boolean().optional(),
+  "brandStory": zod.boolean().optional(),
+  "whatsappWidget": zod.boolean().optional()
+}).optional(),
+  "featuredProductIds": zod.array(zod.number()).optional(),
+  "primaryColor": zod.string().optional(),
+  "backgroundColor": zod.string().optional(),
+  "cardColor": zod.string().optional(),
+  "foregroundColor": zod.string().optional(),
+  "accentColor": zod.string().optional(),
+  "mutedColor": zod.string().optional(),
+  "borderColor": zod.string().optional(),
+  "serifFont": zod.string().optional(),
+  "sansFont": zod.string().optional(),
+  "buttonRadius": zod.string().optional(),
+  "buttonStyle": zod.string().optional(),
   "adminEmails": zod.string().optional()
 })
 
@@ -618,6 +668,31 @@ export const UpdateSiteSettingsResponse = zod.object({
   "heroTitle": zod.string(),
   "heroSubtitle": zod.string(),
   "heroImageUrl": zod.string().nullish(),
+  "heroBanners": zod.array(zod.object({
+  "title": zod.string(),
+  "subtitle": zod.string(),
+  "imageUrl": zod.string(),
+  "ctaText": zod.string(),
+  "ctaLink": zod.string()
+})).optional(),
+  "sectionsConfig": zod.object({
+  "featuredProducts": zod.boolean().optional(),
+  "categoriesShowcase": zod.boolean().optional(),
+  "brandStory": zod.boolean().optional(),
+  "whatsappWidget": zod.boolean().optional()
+}).optional(),
+  "featuredProductIds": zod.array(zod.number()).optional(),
+  "primaryColor": zod.string(),
+  "backgroundColor": zod.string(),
+  "cardColor": zod.string(),
+  "foregroundColor": zod.string(),
+  "accentColor": zod.string(),
+  "mutedColor": zod.string(),
+  "borderColor": zod.string(),
+  "serifFont": zod.string(),
+  "sansFont": zod.string(),
+  "buttonRadius": zod.string(),
+  "buttonStyle": zod.string(),
   "adminEmails": zod.string().optional()
 })
 

@@ -5,6 +5,7 @@ import { shadcn } from '@clerk/themes';
 import { Switch, Route, useLocation, Router as WouterRouter } from 'wouter';
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { useThemeApplier } from "@/lib/settings";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
@@ -107,6 +108,11 @@ function SignUpPage() {
   );
 }
 
+function ThemeApplier() {
+  useThemeApplier();
+  return null;
+}
+
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
   const queryClientLocal = useQueryClient();
@@ -158,6 +164,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <ThemeApplier />
         <TooltipProvider>
           <Switch>
             <Route path="/" component={Home} />

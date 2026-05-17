@@ -4,7 +4,7 @@ import { ShoppingBag, User, X, MessageCircle, Menu, LogOut } from "lucide-react"
 import { useGetCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Show, useClerk, useUser } from "@clerk/react";
-import { useSiteSettings } from "@/lib/settings";
+import { useSiteSettings, getSectionsConfig } from "@/lib/settings";
 
 const WHATSAPP_MESSAGE = "Hello, I have a question about BOTH & CO.";
 
@@ -152,6 +152,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const cartCount = cartItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
   const { signOut } = useClerk();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const settings = useSiteSettings();
+  const sections = getSectionsConfig(settings);
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -256,7 +258,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </footer>
-      <WhatsAppWidget />
+      {sections.whatsappWidget && <WhatsAppWidget />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, siteSettingsTable } from "@workspace/db";
-import { isRequesterAdmin } from "./admin.js";
+import { isRequesterAdmin, serializeSettings } from "./admin.js";
 
 const router = Router();
 
@@ -14,9 +14,8 @@ export async function getOrCreateSettings() {
 router.get("/", async (req, res): Promise<void> => {
   try {
     const settings = await getOrCreateSettings();
-    // Only expose adminEmails to admins; strip from public responses.
     const isAdmin = await isRequesterAdmin(req);
-    res.json({ ...settings, adminEmails: isAdmin ? (settings.adminEmails ?? "") : "" });
+    res.json(serializeSettings(settings, isAdmin));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to fetch settings" });

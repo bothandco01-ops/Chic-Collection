@@ -5,6 +5,8 @@
  * BOTH & CO. ecommerce API
  * OpenAPI spec version: 0.1.0
  */
+import type { HeroBanner } from './heroBanner';
+import type { SectionsConfig } from './sectionsConfig';
 
 export interface SiteSettings {
   bankName: string;
@@ -15,5 +17,19 @@ export interface SiteSettings {
   heroSubtitle: string;
   /** @nullable */
   heroImageUrl?: string | null;
+  heroBanners?: HeroBanner[];
+  sectionsConfig?: SectionsConfig;
+  featuredProductIds?: number[];
+  primaryColor: string;
+  backgroundColor: string;
+  cardColor: string;
+  foregroundColor: string;
+  accentColor: string;
+  mutedColor: string;
+  borderColor: string;
+  serifFont: string;
+  sansFont: string;
+  buttonRadius: string;
+  buttonStyle: string;
   adminEmails?: string;
 }

@@ -1,25 +1,10 @@
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
 import { db, productsTable } from "@workspace/db";
-import { getAuth, clerkClient } from "@clerk/express";
+import { getAuth } from "@clerk/express";
+import { isRequesterAdmin } from "./admin.js";
 
 const router = Router();
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
-  .split(",")
-  .map((e) => e.trim().toLowerCase())
-  .filter(Boolean);
-
-async function isAdminUser(userId: string): Promise<boolean> {
-  try {
-    const user = await clerkClient.users.getUser(userId);
-    if (user.publicMetadata?.role === "admin") return true;
-    const emails = user.emailAddresses.map((e) => e.emailAddress.toLowerCase());
-    return emails.some((e) => ADMIN_EMAILS.includes(e));
-  } catch {
-    return false;
-  }
-}
 
 type ProductRow = typeof productsTable.$inferSelect;
 export function serialize(p: ProductRow) {
@@ -67,7 +52,7 @@ router.post("/", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
     if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-    if (!(await isAdminUser(auth.userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+    if (!(await isRequesterAdmin(req))) { res.status(403).json({ error: "Forbidden" }); return; }
     const { name, description, price, category, imageUrl, imageUrls, inStock, featured, sizes } = req.body;
     const [product] = await db.insert(productsTable).values({
       name, description, price, category, imageUrl,
@@ -87,7 +72,7 @@ router.patch("/:id", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
     if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-    if (!(await isAdminUser(auth.userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+    if (!(await isRequesterAdmin(req))) { res.status(403).json({ error: "Forbidden" }); return; }
     const id = parseInt(req.params.id);
     const updates: Record<string, unknown> = {};
     const allowed = ["name", "description", "price", "category", "imageUrl", "inStock", "featured", "sizes"];
@@ -110,7 +95,7 @@ router.delete("/:id", async (req, res): Promise<void> => {
   try {
     const auth = getAuth(req);
     if (!auth?.userId) { res.status(401).json({ error: "Unauthorized" }); return; }
-    if (!(await isAdminUser(auth.userId))) { res.status(403).json({ error: "Forbidden" }); return; }
+    if (!(await isRequesterAdmin(req))) { res.status(403).json({ error: "Forbidden" }); return; }
     const id = parseInt(req.params.id);
     await db.delete(productsTable).where(eq(productsTable.id, id));
     res.status(204).send();

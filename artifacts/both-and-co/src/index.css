@@ -156,3 +156,18 @@
     @apply font-serif;
   }
 }
+
+/* When admin chooses "outline" button style, transform solid primary buttons globally */
+body.btn-outline-mode button.bg-primary,
+body.btn-outline-mode a.bg-primary,
+body.btn-outline-mode .bg-primary[role="button"] {
+  background-color: transparent !important;
+  color: hsl(var(--primary)) !important;
+  border: 1px solid hsl(var(--primary)) !important;
+}
+body.btn-outline-mode button.bg-primary:hover,
+body.btn-outline-mode a.bg-primary:hover,
+body.btn-outline-mode .bg-primary[role="button"]:hover {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}

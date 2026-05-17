@@ -175,16 +175,42 @@ router.patch("/site-settings", requireAuth, async (req, res): Promise<void> => {
   try {
     const current = await getOrCreateSettings();
     const updates: Record<string, unknown> = {};
-    const allowed = ["bankName", "accountName", "accountNumber", "whatsappNumber", "heroTitle", "heroSubtitle", "heroImageUrl", "adminEmails"];
-    for (const key of allowed) {
+    const scalarFields = [
+      "bankName", "accountName", "accountNumber", "whatsappNumber",
+      "heroTitle", "heroSubtitle", "heroImageUrl",
+      "primaryColor", "backgroundColor", "cardColor", "foregroundColor", "accentColor", "mutedColor", "borderColor",
+      "serifFont", "sansFont", "buttonRadius", "buttonStyle",
+      "adminEmails",
+    ];
+    for (const key of scalarFields) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     }
+    const jsonFields = ["heroBanners", "sectionsConfig", "featuredProductIds"];
+    for (const key of jsonFields) {
+      if (req.body[key] !== undefined) {
+        updates[key] = req.body[key] === null ? null : JSON.stringify(req.body[key]);
+      }
+    }
     const [updated] = await db.update(siteSettingsTable).set(updates).where(eq(siteSettingsTable.id, current.id)).returning();
-    res.json(updated);
+    res.json(serializeSettings(updated, true));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to update settings" });
   }
 });
+
+export function serializeSettings(row: any, includeAdminEmails: boolean) {
+  const parse = <T>(v: unknown, fallback: T): T => {
+    if (typeof v !== "string" || !v) return fallback;
+    try { const p = JSON.parse(v); return p as T; } catch { return fallback; }
+  };
+  return {
+    ...row,
+    heroBanners: parse(row.heroBanners, [] as any[]),
+    sectionsConfig: parse(row.sectionsConfig, {} as Record<string, boolean>),
+    featuredProductIds: parse(row.featuredProductIds, [] as number[]),
+    adminEmails: includeAdminEmails ? (row.adminEmails ?? "") : "",
+  };
+}
 
 export default router;

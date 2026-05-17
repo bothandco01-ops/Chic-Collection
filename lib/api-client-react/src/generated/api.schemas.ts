@@ -86,6 +86,21 @@ export interface Customer {
   lastOrderDate?: string | null;
 }
 
+export interface HeroBanner {
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  ctaText: string;
+  ctaLink: string;
+}
+
+export interface SectionsConfig {
+  featuredProducts?: boolean;
+  categoriesShowcase?: boolean;
+  brandStory?: boolean;
+  whatsappWidget?: boolean;
+}
+
 export interface SiteSettings {
   bankName: string;
   accountName: string;
@@ -95,6 +110,20 @@ export interface SiteSettings {
   heroSubtitle: string;
   /** @nullable */
   heroImageUrl?: string | null;
+  heroBanners?: HeroBanner[];
+  sectionsConfig?: SectionsConfig;
+  featuredProductIds?: number[];
+  primaryColor: string;
+  backgroundColor: string;
+  cardColor: string;
+  foregroundColor: string;
+  accentColor: string;
+  mutedColor: string;
+  borderColor: string;
+  serifFont: string;
+  sansFont: string;
+  buttonRadius: string;
+  buttonStyle: string;
   adminEmails?: string;
 }
 
@@ -106,6 +135,20 @@ export interface SiteSettingsUpdate {
   heroTitle?: string;
   heroSubtitle?: string;
   heroImageUrl?: string;
+  heroBanners?: HeroBanner[];
+  sectionsConfig?: SectionsConfig;
+  featuredProductIds?: number[];
+  primaryColor?: string;
+  backgroundColor?: string;
+  cardColor?: string;
+  foregroundColor?: string;
+  accentColor?: string;
+  mutedColor?: string;
+  borderColor?: string;
+  serifFont?: string;
+  sansFont?: string;
+  buttonRadius?: string;
+  buttonStyle?: string;
   adminEmails?: string;
 }
 
